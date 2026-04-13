@@ -26,6 +26,19 @@ npm start
 
 El sitio se abrirá en http://localhost:3000
 
+## 🌐 Despliegue en Vercel
+
+Este proyecto ya incluye la configuración mínima para desplegar como SPA en Vercel.
+
+1. Sube el repositorio a GitHub.
+2. Importa el proyecto en Vercel.
+3. Deja la configuración por defecto:
+  - Framework: Create React App
+  - Build command: `npm run build`
+  - Output directory: `build`
+
+Si navegas directamente a una ruta interna, Vercel redirige a `index.html` gracias a [vercel.json](vercel.json).
+
 ## 👥 Usuarios de Demo
 
 | Rol | Email | Contraseña | Nombre |
