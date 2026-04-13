@@ -1,70 +1,94 @@
-# Getting Started with Create React App
+# N&N Sistema Punto de Venta
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema web completo de punto de venta para **Grupo N&N**, desarrollado con React, TypeScript y Tailwind CSS.
 
-## Available Scripts
+## 🚀 Características
 
-In the project directory, you can run:
+- **Autenticación por Roles**: Admin, Encargado, Vendedor/Cajero
+- **Gestión Administrativa**: Organizaciones, Sucursales, Usuarios, Roles, Productos
+- **Módulo de Ventas Avanzado**:
+  - Cálculo automático de IVA dual (21% y 10.5% para informáticos)
+  - Combos/promociones con prorrateo correcto
+  - Descuentos inteligentes
+  - Factura A y B según posición fiscal
+- **Gestión de Stock**: Entrada, salida, ajuste y histórico
+- **Sistema de Créditos**: Solicitud, validación y seguimiento
+- **Reportes**: Productos más vendidos, métodos de pago
+- **Bonificaciones**: Cálculo automático de bonos
 
-### `npm start`
+## 🚀 Inicio Rápido
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+cd nn-punto-venta
+npm install
+npm start
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+El sitio se abrirá en http://localhost:3000
 
-### `npm test`
+## 👥 Usuarios de Demo
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Rol | Email | Contraseña | Nombre |
+|-----|-------|-----------|--------|
+| Admin | admin@nn.com | admin123 | Juan Admin |
+| Encargado | encargado@nn.com | encargado123 | Carlos Encargado |
+| Vendedor | vendedor@nn.com | vendedor123 | María Vendedor |
+| Vendedor | vendedor2@nn.com | vendedor123 | Pedro Vendedor |
 
-### `npm run build`
+Simplemente haz clic en el botón del usuario en la pantalla de login.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 📂 Estructura
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+├── components/       # CRUDTable, FormModal, Navbar, Sidebar
+├── context/         # AuthContext
+├── data/            # mockData.ts
+├── pages/           # Admin, Encargado, Vendedor
+├── types/           # Tipos TypeScript
+├── utils/           # Cálculos de IVA
+├── App.tsx          # Rutas
+└── index.tsx        # Entry point
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🎯 Módulos
 
-### `npm run eject`
+### Admin
+- Organizaciones, Sucursales, Usuarios
+- Roles con permisos granulares
+- Rubros y Servicios
+- Productos y Combos
+- Líneas de Crédito
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Encargado
+- Gestión de Stock
+- Histórico de movimientos
+- Lista de Vendedores
+- Reportes de sucursal
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Vendedor
+- Nueva Venta (IVA dual, combos, descuentos)
+- Mis Ventas
+- Solicitar Crédito
+- Mis Créditos
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 💡 Técnico
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- React 18 + TypeScript
+- Tailwind CSS
+- React Router v6
+- Context API
+- Datos hardcodeados para demo
 
-## Learn More
+## 🎓 Propósito
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Presentación académica de Ingeniería de Software demostrando:
+- Arquitectura escalable
+- Type safety
+- Gestión de roles
+- Cálculos financieros
+- Componentes reutilizables
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Nota**: Sistema con datos simulados para presentación.
