@@ -1,4 +1,4 @@
-import { Role, Usuario, Organizacion, Sucursal, Producto, Categoria, Cliente, Credito } from '../types/index';
+import { Role, Usuario, Organizacion, Sucursal, Producto, Categoria, Cliente, Credito, Rubro, Servicio } from '../types/index';
 
 // Roles
 export const mockRoles: Role[] = [
@@ -344,32 +344,46 @@ export const mockClientes: Cliente[] = [
     id: 1,
     nombre: 'Juan',
     apellido: 'García',
-    dni: '12345678',
-    cuit: '20-12345678-9',
+    cuitCuil: '20-12345678-9',
+    razonSocial: 'García Servicios SA',
     email: 'juan@example.com',
     telefono: '3794123456',
-    posicionFiscal: 'responsable_inscripto',
-    domicilio: 'Calle Falsa 123, Corrientes'
+    posicionFiscal: 'responsable_inscripto'
   },
   {
     id: 2,
     nombre: 'María',
     apellido: 'López',
-    dni: '87654321',
+    cuitCuil: '27-87654321-0',
     email: 'maria@example.com',
     telefono: '3794654321',
-    posicionFiscal: 'monotributista',
-    domicilio: 'Av. Principal 456, Corrientes'
+    posicionFiscal: 'monotributista'
   },
   {
     id: 3,
     nombre: 'Pedro',
     apellido: 'Rodríguez',
-    dni: '11223344',
+    cuitCuil: '20-11223344-5',
     email: 'pedro@example.com',
-    posicionFiscal: 'consumidor_final',
-    domicilio: 'San Juan 789, Corrientes'
+    posicionFiscal: 'consumidor_final'
   }
+];
+
+// Rubros
+export const mockRubros: Rubro[] = [
+  { id: 1, nombre: 'Electrodomésticos', descripcion: 'Artículos y equipos para el hogar' },
+  { id: 2, nombre: 'Tecnología', descripcion: 'Productos tecnológicos e informáticos' },
+  { id: 3, nombre: 'Herramientas', descripcion: 'Herramientas y equipos de trabajo' },
+  { id: 4, nombre: 'Iluminación', descripcion: 'Productos de iluminación y luminarias' },
+  { id: 5, nombre: 'Neumáticos', descripcion: 'Neumáticos y accesorios para vehículos' },
+  { id: 6, nombre: 'Jardín', descripcion: 'Artículos para jardín y espacios exteriores' },
+  { id: 7, nombre: 'Telefonía', descripcion: 'Celulares, accesorios y telefonía en general' }
+];
+
+// Servicios
+export const mockServicios: Servicio[] = [
+  { id: 1, nombre: 'Punto de Venta', descripcion: 'Servicio de gestión de ventas en mostrador', creditoId: 1 },
+  { id: 2, nombre: 'Créditos Sola Firma', descripcion: 'Otorgamiento de créditos sin garantía prendaria', creditoId: 2 }
 ];
 
 // Créditos disponibles

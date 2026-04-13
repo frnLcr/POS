@@ -20,6 +20,8 @@ import AdminCreditos from './pages/Admin/AdminCreditos';
 import AdminNotificaciones from './pages/Admin/AdminNotificaciones';
 import AdminRoles from './pages/Admin/AdminRoles';
 
+import GestionClientes from './pages/GestionClientes';
+
 // Encargado Pages
 import EncargadoStock from './pages/Encargado/EncargadoStock';
 import EncargadoVendedores from './pages/Encargado/EncargadoVendedores';
@@ -252,6 +254,18 @@ const App: React.FC = () => {
               <AppLayout>
                 <ProtectedRoute requiredRole="admin">
                   <AdminNotificaciones />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+
+          {/* Clientes - admin y vendedor */}
+          <Route
+            path="/clientes"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRoles={['admin', 'vendedor']}>
+                  <GestionClientes />
                 </ProtectedRoute>
               </AppLayout>
             }

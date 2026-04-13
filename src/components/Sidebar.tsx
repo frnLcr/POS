@@ -94,6 +94,14 @@ const menuItems: MenuItem[] = [
     roles: ['cajero', 'vendedor']
   },
 
+  // Clientes (admin + vendedor)
+  {
+    label: 'Clientes',
+    path: '/clientes',
+    icon: '👤',
+    roles: ['admin', 'vendedor']
+  },
+
   // Vendedor
   {
     label: 'Solicitar Crédito',

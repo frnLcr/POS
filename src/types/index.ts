@@ -98,12 +98,11 @@ export interface Cliente {
   id: number;
   nombre: string;
   apellido: string;
-  dni: string;
-  cuit?: string;
+  cuitCuil: string;
+  razonSocial?: string;
   email?: string;
   telefono?: string;
   posicionFiscal: 'responsable_inscripto' | 'monotributista' | 'consumidor_final';
-  domicilio?: string;
 }
 
 export interface ItemVenta {
@@ -162,6 +161,19 @@ export interface Credito {
   edadMinima: number;
   edadMaxima: number;
   tasaInteres: number;
+}
+
+export interface Rubro {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface Servicio {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  creditoId: number;
 }
 
 export interface MovimientoStock {
