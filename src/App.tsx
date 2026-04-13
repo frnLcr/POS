@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificacionesProvider } from './context/NotificacionesContext';
+import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 
@@ -15,6 +17,8 @@ import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import AdminRubrosServicios from './pages/Admin/AdminRubrosServicios';
 import AdminProductos from './pages/Admin/AdminProductos';
 import AdminCreditos from './pages/Admin/AdminCreditos';
+import AdminNotificaciones from './pages/Admin/AdminNotificaciones';
+import AdminRoles from './pages/Admin/AdminRoles';
 
 // Encargado Pages
 import EncargadoStock from './pages/Encargado/EncargadoStock';
@@ -75,6 +79,8 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <NotificacionesProvider>
+        <ToastProvider>
         <Routes>
           {/* Login */}
           <Route path="/login" element={<Login />} />
@@ -227,10 +233,36 @@ const App: React.FC = () => {
             }
           />
 
+          {/* Admin - Roles */}
+          <Route
+            path="/admin/roles"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminRoles />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+
+          {/* Admin - Notificaciones */}
+          <Route
+            path="/admin/notificaciones"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminNotificaciones />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+
           {/* Default Route */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </ToastProvider>
+        </NotificacionesProvider>
       </AuthProvider>
     </BrowserRouter>
   );

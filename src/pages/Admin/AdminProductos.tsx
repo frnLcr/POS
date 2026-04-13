@@ -4,8 +4,10 @@ import FormModal from '../../components/FormModal';
 import { Producto } from '../../types/index';
 import { mockProductos, mockCategorias } from '../../data/mockData';
 import { formatearMoneda } from '../../utils/calculosVenta';
+import { useToast } from '../../context/ToastContext';
 
 const AdminProductos: React.FC = () => {
+  const toast = useToast();
   const [productos, setProductos] = useState<Producto[]>(mockProductos);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -22,7 +24,8 @@ const AdminProductos: React.FC = () => {
     stock: 0,
     categoriaId: 1,
     esCombo: false,
-    productosCombo: []
+    productosCombo: [],
+    descuento: 0
   });
 
   const handleEdit = (producto: Producto) => {
@@ -50,7 +53,8 @@ const AdminProductos: React.FC = () => {
       stock: 0,
       categoriaId: 1,
       esCombo: false,
-      productosCombo: []
+      productosCombo: [],
+      descuento: 0
     });
     setIsModalOpen(true);
   };
@@ -58,11 +62,11 @@ const AdminProductos: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setProductos(
-        productos.map((p) => (p.id === editingId ? formData : p))
-      );
+      setProductos(productos.map((p) => (p.id === editingId ? formData : p)));
+      toast.success('Producto actualizado correctamente');
     } else {
       setProductos([...productos, formData]);
+      toast.success('Producto creado correctamente');
     }
     setIsModalOpen(false);
   };
@@ -97,6 +101,13 @@ const AdminProductos: React.FC = () => {
             key: 'precio',
             label: 'Precio',
             render: (precio) => formatearMoneda(precio)
+          },
+          {
+            key: 'descuento',
+            label: 'Descuento',
+            render: (d) => d ? (
+              <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">{d}% OFF</span>
+            ) : <span className="text-gray-400 text-xs">—</span>
           },
           {
             key: 'iva',
@@ -286,6 +297,28 @@ const AdminProductos: React.FC = () => {
               required
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Descuento (%) — 0 = sin descuento
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={formData.descuento ?? 0}
+            onChange={(e) =>
+              setFormData({ ...formData, descuento: parseFloat(e.target.value) || 0 })
+            }
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          />
+          {(formData.descuento ?? 0) > 0 && (
+            <p className="text-xs text-green-600 mt-1">
+              Precio final: {formatearMoneda(formData.precio * (1 - (formData.descuento ?? 0) / 100))}
+            </p>
+          )}
         </div>
 
         <div className="border-t-2 pt-4">

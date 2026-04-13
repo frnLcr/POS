@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Organizacion } from '../../types/index';
 import { mockOrganizaciones } from '../../data/mockData';
+import { useToast } from '../../context/ToastContext';
 
 const AdminRubrosServicios: React.FC = () => {
+  const toast = useToast();
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>(mockOrganizaciones);
   const [selectedOrgId, setSelectedOrgId] = useState<number>(1);
   const [newRubro, setNewRubro] = useState('');
@@ -12,48 +14,36 @@ const AdminRubrosServicios: React.FC = () => {
 
   const addRubro = () => {
     if (newRubro.trim()) {
-      setOrganizaciones(
-        organizaciones.map((org) =>
-          org.id === selectedOrgId
-            ? { ...org, rubros: [...org.rubros, newRubro] }
-            : org
-        )
-      );
+      setOrganizaciones(organizaciones.map((org) =>
+        org.id === selectedOrgId ? { ...org, rubros: [...org.rubros, newRubro] } : org
+      ));
+      toast.success(`Rubro "${newRubro}" agregado`);
       setNewRubro('');
     }
   };
 
   const addServicio = () => {
     if (newServicio.trim()) {
-      setOrganizaciones(
-        organizaciones.map((org) =>
-          org.id === selectedOrgId
-            ? { ...org, servicios: [...org.servicios, newServicio] }
-            : org
-        )
-      );
+      setOrganizaciones(organizaciones.map((org) =>
+        org.id === selectedOrgId ? { ...org, servicios: [...org.servicios, newServicio] } : org
+      ));
+      toast.success(`Servicio "${newServicio}" agregado`);
       setNewServicio('');
     }
   };
 
   const removeRubro = (rubro: string) => {
-    setOrganizaciones(
-      organizaciones.map((org) =>
-        org.id === selectedOrgId
-          ? { ...org, rubros: org.rubros.filter((r) => r !== rubro) }
-          : org
-      )
-    );
+    setOrganizaciones(organizaciones.map((org) =>
+      org.id === selectedOrgId ? { ...org, rubros: org.rubros.filter((r) => r !== rubro) } : org
+    ));
+    toast.info(`Rubro "${rubro}" eliminado`);
   };
 
   const removeServicio = (servicio: string) => {
-    setOrganizaciones(
-      organizaciones.map((org) =>
-        org.id === selectedOrgId
-          ? { ...org, servicios: org.servicios.filter((s) => s !== servicio) }
-          : org
-      )
-    );
+    setOrganizaciones(organizaciones.map((org) =>
+      org.id === selectedOrgId ? { ...org, servicios: org.servicios.filter((s) => s !== servicio) } : org
+    ));
+    toast.info(`Servicio "${servicio}" eliminado`);
   };
 
   return (

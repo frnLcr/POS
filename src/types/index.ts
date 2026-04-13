@@ -66,6 +66,25 @@ export interface Producto {
   categoriaId: number;
   esCombo?: boolean;
   productosCombo?: number[];
+  descuento?: number; // porcentaje 0-100
+}
+
+export interface Notificacion {
+  id: number;
+  titulo: string;
+  mensaje: string;
+  productoId?: number;
+  fecha: string;
+  leida: boolean;
+  tipo: 'oferta' | 'nuevo_producto' | 'stock' | 'general';
+}
+
+export interface NotificacionesContextType {
+  notificaciones: Notificacion[];
+  agregarNotificacion: (n: Omit<Notificacion, 'id' | 'fecha' | 'leida'>) => void;
+  marcarLeida: (id: number) => void;
+  marcarTodasLeidas: () => void;
+  noLeidas: number;
 }
 
 export interface Categoria {

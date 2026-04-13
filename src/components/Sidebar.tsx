@@ -47,6 +47,18 @@ const menuItems: MenuItem[] = [
     icon: '💳',
     roles: ['admin']
   },
+  {
+    label: 'Roles y Permisos',
+    path: '/admin/roles',
+    icon: '🔐',
+    roles: ['admin']
+  },
+  {
+    label: 'Notificaciones',
+    path: '/admin/notificaciones',
+    icon: '🔔',
+    roles: ['admin']
+  },
 
   // Encargado
   {

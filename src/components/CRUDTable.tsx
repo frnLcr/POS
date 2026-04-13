@@ -13,6 +13,8 @@ interface CRUDTableProps {
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  searchPlaceholder?: string;
+  skipInternalConfirm?: boolean;
 }
 
 const CRUDTable: React.FC<CRUDTableProps> = ({
@@ -21,13 +23,26 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
   data,
   onEdit,
   onDelete,
-  onAdd
+  onAdd,
+  searchPlaceholder = 'Buscar...',
+  skipInternalConfirm = false
 }) => {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+
+  const filteredData = search.trim()
+    ? data.filter((item) =>
+        Object.values(item).some((val) => {
+          if (val === null || val === undefined) return false;
+          if (Array.isArray(val)) return val.join(' ').toLowerCase().includes(search.toLowerCase());
+          return String(val).toLowerCase().includes(search.toLowerCase());
+        })
+      )
+    : data;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg ring-1 ring-slate-200 p-6 md:p-7">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{title}</h2>
         <button
           type="button"
@@ -38,9 +53,24 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
         </button>
       </div>
 
-      {data.length === 0 ? (
+      <div className="mb-5">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="w-full max-w-sm px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+        />
+        {search && (
+          <span className="ml-3 text-xs text-gray-500">
+            {filteredData.length} resultado{filteredData.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {filteredData.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No hay registros disponibles
+          {search ? 'Sin resultados para la búsqueda' : 'No hay registros disponibles'}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -61,7 +91,7 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
               </tr>
             </thead>
             <tbody>
-              {data.map((item) => (
+              {filteredData.map((item) => (
                 <tr key={item.id} className="border-b border-slate-100 hover:bg-blue-50/40 transition">
                   {columns.map((col) => (
                     <td key={`${item.id}-${col.key}`} className="px-6 py-4 text-slate-700">
@@ -83,7 +113,7 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setConfirmDelete(item.id)}
+                      onClick={() => skipInternalConfirm ? onDelete(item.id) : setConfirmDelete(item.id)}
                       aria-label="Eliminar"
                       title="Eliminar"
                       className="w-9 h-9 inline-flex items-center justify-center rounded-lg bg-red-100 hover:bg-red-200 text-red-700 transition"

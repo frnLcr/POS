@@ -6,6 +6,7 @@ import {
   formatearMoneda,
   determinarTipoFactura
 } from '../../utils/calculosVenta';
+import { useNotificaciones } from '../../context/NotificacionesContext';
 
 interface CarritoItem {
   producto: typeof mockProductos[0];
@@ -14,6 +15,7 @@ interface CarritoItem {
 }
 
 const VendedorVentas: React.FC = () => {
+  const { notificaciones } = useNotificaciones();
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null);
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [documentoBusqueda, setDocumentoBusqueda] = useState('');
@@ -27,6 +29,8 @@ const VendedorVentas: React.FC = () => {
   const [cargandoValidacion, setCargandoValidacion] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState(false);
   const [numeroFactura, setNumeroFactura] = useState(0);
+  const [mostrarOptInNotif, setMostrarOptInNotif] = useState(false);
+  const [notifAceptadas, setNotifAceptadas] = useState(false);
 
   useEffect(() => {
     if (!procesandoVenta || segundosProcesando <= 0) return;
@@ -78,10 +82,43 @@ const VendedorVentas: React.FC = () => {
       });
     }
     setCargandoValidacion(false);
+
+    // Preguntar por notificaciones si no lo hizo antes
+    const yaAcepto = localStorage.getItem(`notif_${documentoBusqueda}`);
+    if (!yaAcepto && Notification.permission !== 'denied') {
+      setMostrarOptInNotif(true);
+    }
+  };
+
+  const aceptarNotificaciones = async () => {
+    const permiso = await Notification.requestPermission();
+    if (permiso === 'granted') {
+      localStorage.setItem(`notif_${documentoBusqueda}`, 'true');
+      setNotifAceptadas(true);
+      // Enviar notificaciones activas al cliente
+      const ofertasActivas = notificaciones.filter((n) => n.tipo === 'oferta');
+      ofertasActivas.forEach((n) => {
+        new Notification(n.titulo, { body: n.mensaje, icon: '/favicon.ico' });
+      });
+    }
+    setMostrarOptInNotif(false);
+  };
+
+  const rechazarNotificaciones = () => {
+    localStorage.setItem(`notif_${documentoBusqueda}`, 'rechazado');
+    setMostrarOptInNotif(false);
+  };
+
+  const precioConDescuento = (producto: typeof mockProductos[0]) => {
+    if (!producto.descuento) return producto.precio;
+    return producto.precio * (1 - producto.descuento / 100);
   };
 
   const agregarAlCarrito = (producto: typeof mockProductos[0]) => {
     const existente = carrito.find((item) => item.producto.id === producto.id);
+    const descuentoProducto = producto.descuento
+      ? producto.precio * (producto.descuento / 100)
+      : 0;
     if (existente) {
       setCarrito(
         carrito.map((item) =>
@@ -91,7 +128,7 @@ const VendedorVentas: React.FC = () => {
         )
       );
     } else {
-      setCarrito([...carrito, { producto, cantidad: 1, descuento: 0 }]);
+      setCarrito([...carrito, { producto, cantidad: 1, descuento: descuentoProducto }]);
     }
   };
 
@@ -211,6 +248,41 @@ const VendedorVentas: React.FC = () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Modal opt-in notificaciones */}
+      {mostrarOptInNotif && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm p-8 text-center">
+            <p className="text-4xl mb-4">🔔</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">
+              ¿Recibir notificaciones de ofertas?
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              El cliente puede recibir alertas de descuentos y nuevos productos directamente en su dispositivo.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={rechazarNotificaciones}
+                className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-lg transition"
+              >
+                Ahora no
+              </button>
+              <button
+                onClick={aceptarNotificaciones}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notifAceptadas && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700 font-medium">
+          🔔 El cliente recibirá notificaciones de ofertas y productos.
+        </div>
+      )}
+
       {procesandoVenta && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-8 text-center">
@@ -342,15 +414,35 @@ const VendedorVentas: React.FC = () => {
                     key={producto.id}
                     className="border border-gray-200 rounded p-4 hover:border-blue-500 transition"
                   >
-                    <p className="font-semibold text-gray-800 text-sm">
-                      {producto.nombre}
-                    </p>
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="font-semibold text-gray-800 text-sm flex-1">
+                        {producto.nombre}
+                      </p>
+                      {(producto.descuento ?? 0) > 0 && (
+                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 shrink-0">
+                          {producto.descuento}% OFF
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-600 mb-2">
                       {producto.marca} {producto.modelo}
                     </p>
-                    <p className="text-lg font-bold text-green-600 mb-2">
-                      {formatearMoneda(producto.precio)}
-                    </p>
+                    <div className="mb-2">
+                      {(producto.descuento ?? 0) > 0 ? (
+                        <>
+                          <p className="text-xs text-gray-400 line-through">
+                            {formatearMoneda(producto.precio)}
+                          </p>
+                          <p className="text-lg font-bold text-green-600">
+                            {formatearMoneda(precioConDescuento(producto))}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-lg font-bold text-green-600">
+                          {formatearMoneda(producto.precio)}
+                        </p>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-600 mb-3">
                       Código: {producto.codigo} | Barra: {producto.codigoBarra || 'N/A'}
                     </p>

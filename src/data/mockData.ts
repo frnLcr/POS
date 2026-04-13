@@ -218,7 +218,8 @@ export const mockProductos: Producto[] = [
     precio: 65000,
     iva: 10.5,
     stock: 12,
-    categoriaId: 2
+    categoriaId: 2,
+    descuento: 15
   },
   {
     id: 2,
@@ -232,7 +233,8 @@ export const mockProductos: Producto[] = [
     precio: 35000,
     iva: 10.5,
     stock: 8,
-    categoriaId: 2
+    categoriaId: 2,
+    descuento: 10
   },
   {
     id: 3,

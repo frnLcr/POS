@@ -3,8 +3,10 @@ import CRUDTable from '../../components/CRUDTable';
 import FormModal from '../../components/FormModal';
 import { Credito } from '../../types/index';
 import { mockCreditos, mockOrganizaciones } from '../../data/mockData';
+import { useToast } from '../../context/ToastContext';
 
 const AdminCreditos: React.FC = () => {
+  const toast = useToast();
   const [creditos, setCreditos] = useState<Credito[]>(mockCreditos);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -49,11 +51,11 @@ const AdminCreditos: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setCreditos(
-        creditos.map((c) => (c.id === editingId ? formData : c))
-      );
+      setCreditos(creditos.map((c) => (c.id === editingId ? formData : c)));
+      toast.success('Línea de crédito actualizada correctamente');
     } else {
       setCreditos([...creditos, formData]);
+      toast.success('Línea de crédito creada correctamente');
     }
     setIsModalOpen(false);
   };

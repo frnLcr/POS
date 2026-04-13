@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import CRUDTable from '../../components/CRUDTable';
 import FormModal from '../../components/FormModal';
 import { Organizacion } from '../../types/index';
-import { mockOrganizaciones } from '../../data/mockData';
+import { mockOrganizaciones, mockSucursales } from '../../data/mockData';
+import { useToast } from '../../context/ToastContext';
 
 const AdminOrganizaciones: React.FC = () => {
+  const toast = useToast();
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>(mockOrganizaciones);
+  const [verSucursalesOrgId, setVerSucursalesOrgId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Organizacion>({
@@ -45,11 +48,11 @@ const AdminOrganizaciones: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setOrganizaciones(
-        organizaciones.map((org) => (org.id === editingId ? formData : org))
-      );
+      setOrganizaciones(organizaciones.map((org) => (org.id === editingId ? formData : org)));
+      toast.success('Organización actualizada correctamente');
     } else {
       setOrganizaciones([...organizaciones, formData]);
+      toast.success('Organización creada correctamente');
     }
     setIsModalOpen(false);
   };
@@ -71,6 +74,22 @@ const AdminOrganizaciones: React.FC = () => {
             key: 'rubros',
             label: 'Rubros',
             render: (rubros) => rubros.join(', ')
+          },
+          {
+            key: 'id',
+            label: 'Sucursales',
+            render: (orgId) => {
+              const count = mockSucursales.filter((s) => s.organizacionId === orgId).length;
+              return (
+                <button
+                  type="button"
+                  onClick={() => setVerSucursalesOrgId(orgId)}
+                  className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-700 text-xs font-semibold px-3 py-1 rounded-full transition"
+                >
+                  🏪 {count} sucursal{count !== 1 ? 'es' : ''}
+                </button>
+              );
+            }
           }
         ]}
         data={organizaciones}
@@ -178,6 +197,55 @@ const AdminOrganizaciones: React.FC = () => {
           />
         </div>
       </FormModal>
+
+      {/* Modal sucursales de la organización */}
+      {verSucursalesOrgId !== null && (() => {
+        const org = organizaciones.find((o) => o.id === verSucursalesOrgId);
+        const sucursales = mockSucursales.filter((s) => s.organizacionId === verSucursalesOrgId);
+        return (
+          <div className="fixed inset-0 bg-slate-950/55 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg">
+              <div className="flex justify-between items-center px-6 py-4 border-b">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Sucursales</h3>
+                  <p className="text-sm text-slate-500">{org?.nombre}</p>
+                </div>
+                <button
+                  onClick={() => setVerSucursalesOrgId(null)}
+                  className="text-slate-400 hover:text-slate-700 text-xl font-bold w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6">
+                {sucursales.length === 0 ? (
+                  <p className="text-center text-gray-400 py-6">Esta organización no tiene sucursales registradas</p>
+                ) : (
+                  <div className="space-y-3">
+                    {sucursales.map((s) => (
+                      <div key={s.id} className="border border-gray-200 rounded-xl p-4 hover:bg-slate-50 transition">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-slate-800">{s.nombre}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Código: {s.codigo}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-2">
+                          {s.direccion.calle} {s.direccion.numero}, {s.direccion.barrio}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {s.direccion.localidad}, {s.direccion.provincia}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -3,8 +3,10 @@ import CRUDTable from '../../components/CRUDTable';
 import FormModal from '../../components/FormModal';
 import { Sucursal } from '../../types/index';
 import { mockSucursales, mockOrganizaciones, mockUsuarios } from '../../data/mockData';
+import { useToast } from '../../context/ToastContext';
 
 const AdminSucursales: React.FC = () => {
+  const toast = useToast();
   const [sucursales, setSucursales] = useState<Sucursal[]>(mockSucursales);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -55,11 +57,11 @@ const AdminSucursales: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      setSucursales(
-        sucursales.map((s) => (s.id === editingId ? formData : s))
-      );
+      setSucursales(sucursales.map((s) => (s.id === editingId ? formData : s)));
+      toast.success('Sucursal actualizada correctamente');
     } else {
       setSucursales([...sucursales, formData]);
+      toast.success('Sucursal creada correctamente');
     }
     setIsModalOpen(false);
   };
