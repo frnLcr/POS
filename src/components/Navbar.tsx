@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
-  const { usuario, logout, role } = useAuth();
+  const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
   const getNombreRol = (roleId?: number) => {
