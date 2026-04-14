@@ -48,6 +48,12 @@ const menuItems: MenuItem[] = [
     roles: ['admin']
   },
   {
+    label: 'Categorías',
+    path: '/admin/categorias',
+    icon: '🏷️',
+    roles: ['admin']
+  },
+  {
     label: 'Roles y Permisos',
     path: '/admin/roles',
     icon: '🔐',
@@ -80,6 +86,14 @@ const menuItems: MenuItem[] = [
     roles: ['encargado']
   },
 
+  // Encargado
+  {
+    label: 'Ventas',
+    path: '/encargado/ventas',
+    icon: '📈',
+    roles: ['encargado']
+  },
+
   // Cajero
   {
     label: 'Nueva Venta',
@@ -87,11 +101,13 @@ const menuItems: MenuItem[] = [
     icon: '🛒',
     roles: ['cajero']
   },
+
+  // Vendedor
   {
     label: 'Mis Ventas',
     path: '/vendedor/mis-ventas',
     icon: '📋',
-    roles: ['cajero', 'vendedor']
+    roles: ['vendedor']
   },
 
   // Clientes (admin + encargado + vendedor + cajero)

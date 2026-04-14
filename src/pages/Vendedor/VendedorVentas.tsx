@@ -3,8 +3,7 @@ import { Cliente, Venta } from '../../types/index';
 import { mockProductos, mockClientes, mockUsuarios } from '../../data/mockData';
 import {
   calcularIVADual,
-  formatearMoneda,
-  determinarTipoFactura
+  formatearMoneda
 } from '../../utils/calculosVenta';
 
 const vendedores = mockUsuarios.filter((u) => u.roleId === 4);
@@ -23,15 +22,20 @@ const emptyAltaForm: Omit<Cliente, 'id'> = {
 interface CarritoItem {
   producto: typeof mockProductos[0];
   cantidad: number;
-  descuento: number; // por item
+  descuento: number;
 }
+
+const LABEL_FISCAL: Record<Cliente['posicionFiscal'], string> = {
+  responsable_inscripto: 'Responsable Inscripto',
+  monotributista: 'Monotributista',
+  consumidor_final: 'Consumidor Final'
+};
 
 const VendedorVentas: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>(mockClientes);
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null);
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [documentoBusqueda, setDocumentoBusqueda] = useState('');
-  const [descuentoGeneral, setDescuentoGeneral] = useState(0);
   const [busquedaProducto, setBusquedaProducto] = useState('');
   const [codigoBarraInput, setCodigoBarraInput] = useState('');
   const [metodoPago, setMetodoPago] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
@@ -45,44 +49,45 @@ const VendedorVentas: React.FC = () => {
   const [mostrarFormAlta, setMostrarFormAlta] = useState(false);
   const [altaForm, setAltaForm] = useState<Omit<Cliente, 'id'>>(emptyAltaForm);
   const [vendedorId, setVendedorId] = useState<number | null>(null);
+  // Tipo de factura manual: para inscripto y monotributista el cajero elige
+  const [tipoFacturaManual, setTipoFacturaManual] = useState<'A' | 'B'>('B');
 
   useEffect(() => {
     if (!procesandoVenta || segundosProcesando <= 0) return;
-
-    const timer = setTimeout(() => {
-      setSegundosProcesando((prev) => prev - 1);
-    }, 1000);
-
+    const timer = setTimeout(() => setSegundosProcesando((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [procesandoVenta, segundosProcesando]);
 
   useEffect(() => {
     if (!procesandoVenta || segundosProcesando !== 0 || !ventaPendiente) return;
-
     setProcesandoVenta(false);
     setNumeroFactura(ventaPendiente.numero);
     setVentaCompletada(true);
-
     setTimeout(() => {
       setCarrito([]);
       setClienteEncontrado(null);
       setDocumentoBusqueda('');
-      setDescuentoGeneral(0);
       setVentaCompletada(false);
       setVentaPendiente(null);
       setVendedorId(null);
+      setTipoFacturaManual('B');
     }, 3000);
   }, [procesandoVenta, segundosProcesando, ventaPendiente]);
+
+  // Cuando se encuentra un cliente, se pre-selecciona el tipo de factura sugerido
+  const aplicarClienteEncontrado = (cliente: Cliente) => {
+    setClienteEncontrado(cliente);
+    // Para inscripto la sugerencia es A, para el resto B
+    setTipoFacturaManual(cliente.posicionFiscal === 'responsable_inscripto' ? 'A' : 'B');
+  };
 
   const buscarCliente = async () => {
     if (!documentoBusqueda.trim()) return;
     setCargandoValidacion(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
-
     const cliente = clientes.find((c) => c.cuitCuil === documentoBusqueda.trim());
-
     if (cliente) {
-      setClienteEncontrado(cliente);
+      aplicarClienteEncontrado(cliente);
     } else {
       setAltaForm({ ...emptyAltaForm, cuitCuil: documentoBusqueda.trim() });
       setMostrarConfirmAlta(true);
@@ -98,28 +103,22 @@ const VendedorVentas: React.FC = () => {
       razonSocial: altaForm.posicionFiscal === 'consumidor_final' ? undefined : altaForm.razonSocial
     };
     setClientes([...clientes, nuevoCliente]);
-    setClienteEncontrado(nuevoCliente);
+    aplicarClienteEncontrado(nuevoCliente);
     setMostrarFormAlta(false);
   };
 
   const precioConDescuento = (producto: typeof mockProductos[0]) => {
-    if (!producto.descuento) return producto.precio;
+    if (!producto.esCombo || !producto.descuento) return producto.precio;
     return producto.precio * (1 - producto.descuento / 100);
   };
 
   const agregarAlCarrito = (producto: typeof mockProductos[0]) => {
     const existente = carrito.find((item) => item.producto.id === producto.id);
-    const descuentoProducto = producto.descuento
-      ? producto.precio * (producto.descuento / 100)
-      : 0;
+    const descuentoProducto = producto.esCombo && producto.descuento ? producto.precio * (producto.descuento / 100) : 0;
     if (existente) {
-      setCarrito(
-        carrito.map((item) =>
-          item.producto.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
-        )
-      );
+      setCarrito(carrito.map((item) =>
+        item.producto.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
+      ));
     } else {
       setCarrito([...carrito, { producto, cantidad: 1, descuento: descuentoProducto }]);
     }
@@ -133,36 +132,20 @@ const VendedorVentas: React.FC = () => {
     if (cantidad <= 0) {
       eliminarDelCarrito(productoId);
     } else {
-      setCarrito(
-        carrito.map((item) =>
-          item.producto.id === productoId
-            ? { ...item, cantidad }
-            : item
-        )
-      );
+      setCarrito(carrito.map((item) =>
+        item.producto.id === productoId ? { ...item, cantidad } : item
+      ));
     }
   };
 
   const buscarPorCodigo = () => {
     const codigoNormalizado = codigoBarraInput.trim().toLowerCase();
     if (!codigoNormalizado) return;
-
     const producto = mockProductos.find(
-      (p) =>
-        p.codigo.toLowerCase() === codigoNormalizado ||
-        p.codigoBarra === codigoNormalizado
+      (p) => p.codigo.toLowerCase() === codigoNormalizado || p.codigoBarra === codigoNormalizado
     );
-
-    if (!producto) {
-      alert('No se encontró producto con ese código');
-      return;
-    }
-
-    if (!clienteEncontrado) {
-      alert('Primero debes seleccionar cliente para agregar al carrito');
-      return;
-    }
-
+    if (!producto) { alert('No se encontró producto con ese código'); return; }
+    if (!clienteEncontrado) { alert('Primero debes seleccionar un cliente'); return; }
     agregarAlCarrito(producto);
     setCodigoBarraInput('');
   };
@@ -173,12 +156,8 @@ const VendedorVentas: React.FC = () => {
       cantidad: item.cantidad,
       precioUnitario: item.producto.precio
     }));
-
-    const descuentoTotal =
-      (carrito.reduce((sum, item) => sum + item.descuento * item.cantidad, 0)) +
-      descuentoGeneral;
-
-    return calcularIVADual(items, descuentoTotal);
+    const descuentoItems = carrito.reduce((sum, item) => sum + item.descuento * item.cantidad, 0);
+    return calcularIVADual(items, descuentoItems);
   };
 
   const finalizarVenta = async () => {
@@ -186,27 +165,20 @@ const VendedorVentas: React.FC = () => {
       alert('Selecciona cliente y productos');
       return;
     }
-
     if (!vendedorId) {
       alert('Debes indicar el vendedor que realizó la venta');
       return;
     }
+    if (procesandoVenta) return;
 
-    if (procesandoVenta) {
-      alert('Espera que termine el proceso de la venta');
-      return;
-    }
-
-    const tipoFactura = determinarTipoFactura(clienteEncontrado.posicionFiscal);
     const totales = calcularTotales();
-
     const nuevaVenta: Venta = {
       id: Math.random(),
       numero: Math.floor(Math.random() * 99999),
       fecha: new Date().toISOString().split('T')[0],
       clienteId: clienteEncontrado.id,
       vendedorId: vendedorId,
-      sucursalId: 1, // Sucursal actual simulada
+      sucursalId: 1,
       items: carrito.map((item) => ({
         productoId: item.producto.id,
         cantidad: item.cantidad,
@@ -214,8 +186,8 @@ const VendedorVentas: React.FC = () => {
         iva: item.producto.iva,
         subtotal: item.cantidad * item.producto.precio
       })),
-      tipoFactura,
-      descuento: descuentoGeneral,
+      tipoFactura: tipoFacturaManual,
+      descuento: 0,
       subtotal: totales.subtotalSinIVA,
       totalIva: totales.totalIVA,
       totalBruto: totales.totalBruto,
@@ -228,14 +200,16 @@ const VendedorVentas: React.FC = () => {
   };
 
   const totales = calcularTotales();
-  const tipoFactura = clienteEncontrado
-    ? determinarTipoFactura(clienteEncontrado.posicionFiscal)
-    : null;
+
+  // El cajero puede elegir tipo solo si el cliente es inscripto o monotributista
+  const puedeElegirTipoFactura =
+    clienteEncontrado &&
+    (clienteEncontrado.posicionFiscal === 'responsable_inscripto' ||
+      clienteEncontrado.posicionFiscal === 'monotributista');
 
   const productosFiltrados = mockProductos.filter((producto) => {
     const termino = busquedaProducto.trim().toLowerCase();
     if (!termino) return true;
-
     return (
       producto.nombre.toLowerCase().includes(termino) ||
       producto.codigo.toLowerCase().includes(termino) ||
@@ -246,6 +220,7 @@ const VendedorVentas: React.FC = () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
+
       {/* Modal: cliente no encontrado → confirmar alta */}
       {mostrarConfirmAlta && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -281,7 +256,7 @@ const VendedorVentas: React.FC = () => {
             <h2 className="text-xl font-bold text-slate-800 mb-6">Alta de Cliente</h2>
             <form onSubmit={handleAltaCliente} className="space-y-4">
 
-              {/* CUIT/CUIL - readonly, pre-cargado */}
+              {/* CUIT/CUIL - readonly */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">CUIT / CUIL</label>
                 <input
@@ -312,7 +287,7 @@ const VendedorVentas: React.FC = () => {
               {/* Nombre y Apellido */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={altaForm.nombre}
@@ -323,7 +298,7 @@ const VendedorVentas: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Apellido</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Apellido <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={altaForm.apellido}
@@ -335,12 +310,12 @@ const VendedorVentas: React.FC = () => {
                 </div>
               </div>
 
-              {/* Razón Social — solo habilitada para no-consumidor final */}
+              {/* Razón Social */}
               <div>
                 <label className={`block text-sm font-semibold mb-1 ${altaForm.posicionFiscal === 'consumidor_final' ? 'text-gray-400' : 'text-gray-700'}`}>
                   Razón Social
                   {altaForm.posicionFiscal === 'consumidor_final' && (
-                    <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para Consumidor Final)</span>
+                    <span className="ml-2 text-xs font-normal text-gray-400">(no aplica)</span>
                   )}
                 </label>
                 <input
@@ -412,44 +387,36 @@ const VendedorVentas: React.FC = () => {
         </div>
       )}
 
-
+      {/* Modal: procesando venta */}
       {procesandoVenta && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-8 text-center">
             <div className="mx-auto mb-5 h-14 w-14 rounded-full border-4 border-slate-200 border-t-blue-600 animate-spin" />
             <h2 className="text-2xl font-bold text-slate-800 mb-2">Procesando venta</h2>
             <p className="text-slate-600 mb-4">
-              {metodoPago === 'efectivo'
-                ? 'Validando pago en efectivo'
-                : metodoPago === 'tarjeta'
-                  ? 'Autorizando pago con tarjeta'
-                  : 'Confirmando transferencia'}
+              {metodoPago === 'efectivo' ? 'Validando pago en efectivo' : metodoPago === 'tarjeta' ? 'Autorizando pago con tarjeta' : 'Confirmando transferencia'}
             </p>
-            <p className="text-sm font-semibold text-blue-700">
-              Espere {segundosProcesando}s
-            </p>
+            <p className="text-sm font-semibold text-blue-700">Espere {segundosProcesando}s</p>
           </div>
         </div>
       )}
 
-      {ventaCompletada ? (
+      {/* Modal: venta completada */}
+      {ventaCompletada && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md text-center">
             <p className="text-4xl mb-4">✅</p>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">
-              ¡Venta Completada!
-            </h2>
-            <p className="text-gray-700 mb-4">
-              N° de Factura: <strong>{numeroFactura}</strong>
-            </p>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">¡Venta Completada!</h2>
+            <p className="text-gray-700 mb-4">N° de Factura: <strong>{numeroFactura}</strong></p>
             <p className="text-gray-600">Redirigiendo...</p>
           </div>
         </div>
-      ) : null}
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Panel Izquierdo: Búsqueda de Cliente y Productos */}
+        {/* Panel Izquierdo */}
         <div className="lg:col-span-2 space-y-6">
+
           {/* Búsqueda de Cliente */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">🔍 Buscar Cliente</h2>
@@ -458,9 +425,11 @@ const VendedorVentas: React.FC = () => {
               <input
                 type="text"
                 value={documentoBusqueda}
-                onChange={(e) => setDocumentoBusqueda(e.target.value)}
-                placeholder="DNI o CUIT..."
+                onChange={(e) => setDocumentoBusqueda(e.target.value.replace(/[^0-9\-]/g, ''))}
+                onKeyDown={(e) => { if (e.key === 'Enter') buscarCliente(); }}
+                placeholder="CUIT / CUIL (solo números)"
                 className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                inputMode="numeric"
               />
               <button
                 onClick={buscarCliente}
@@ -472,43 +441,100 @@ const VendedorVentas: React.FC = () => {
             </div>
 
             {clienteEncontrado && (
-              <div className="bg-green-50 border border-green-300 rounded p-4">
-                <p className="font-semibold text-gray-800 mb-2">
-                  {clienteEncontrado.nombre} {clienteEncontrado.apellido}
-                </p>
-                <p className="text-sm text-gray-700">
-                  {clienteEncontrado.posicionFiscal.replace(/_/g, ' ')}
-                </p>
-                <p className="text-xs text-gray-600 mt-2">
-                  Tipo de Factura: <strong>{tipoFactura}</strong>
-                </p>
-                <button
-                  onClick={() => {
-                    setClienteEncontrado(null);
-                    setCarrito([]);
-                  }}
-                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-semibold"
-                >
-                  Cambiar Cliente
-                </button>
+              <div className="bg-green-50 border border-green-300 rounded-lg p-4 space-y-3">
+                {/* Nombre principal */}
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-gray-800 text-lg">
+                    {clienteEncontrado.nombre} {clienteEncontrado.apellido}
+                  </p>
+                  <button
+                    onClick={() => { setClienteEncontrado(null); setCarrito([]); }}
+                    className="text-red-600 hover:text-red-800 text-xs font-semibold border border-red-200 px-2 py-1 rounded"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+
+                {/* Datos del cliente */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
+                  <div>
+                    <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">CUIT/CUIL</span>
+                    <p className="font-mono">{clienteEncontrado.cuitCuil}</p>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Condición IVA</span>
+                    <p>{LABEL_FISCAL[clienteEncontrado.posicionFiscal]}</p>
+                  </div>
+                  {clienteEncontrado.email && (
+                    <div>
+                      <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Email</span>
+                      <p className="truncate">{clienteEncontrado.email}</p>
+                    </div>
+                  )}
+                  {clienteEncontrado.telefono && (
+                    <div>
+                      <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Teléfono</span>
+                      <p>{clienteEncontrado.telefono}</p>
+                    </div>
+                  )}
+                  {clienteEncontrado.razonSocial && (
+                    <div className="col-span-2">
+                      <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Razón Social</span>
+                      <p>{clienteEncontrado.razonSocial}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tipo de Factura */}
+                <div className="border-t border-green-200 pt-3">
+                  {puedeElegirTipoFactura ? (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 mb-2">Tipo de Factura</p>
+                      <div className="flex gap-3">
+                        {(['A', 'B'] as const).map((tipo) => (
+                          <label key={tipo} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="tipoFactura"
+                              value={tipo}
+                              checked={tipoFacturaManual === tipo}
+                              onChange={() => setTipoFacturaManual(tipo)}
+                              className="accent-blue-600"
+                            />
+                            <span className={`font-bold px-3 py-1 rounded-full text-sm ${
+                              tipoFacturaManual === tipo
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              Factura {tipo}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-600">Tipo de Factura:</span>
+                      <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full text-sm">
+                        Factura B
+                      </span>
+                      <span className="text-xs text-gray-400">(Consumidor Final)</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* POS - Búsqueda por código de barras */}
+          {/* POS - Código de barras */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">🧾 Punto de Venta</h2>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <input
                 type="text"
                 value={codigoBarraInput}
                 onChange={(e) => setCodigoBarraInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    buscarPorCodigo();
-                  }
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') buscarPorCodigo(); }}
                 placeholder="Escanear o ingresar código de barras / código"
                 className="md:col-span-2 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
               />
@@ -520,84 +546,60 @@ const VendedorVentas: React.FC = () => {
                 Agregar por código
               </button>
             </div>
-
             <div className="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm text-gray-700">
               Para agregar por código necesitas cliente seleccionado. La consulta de productos funciona siempre.
             </div>
           </div>
 
-          {/* Listado / Consulta de Productos */}
+          {/* Listado de Productos */}
           <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">📦 Consulta de Productos (POS)</h2>
-
-              <input
-                type="text"
-                value={busquedaProducto}
-                onChange={(e) => setBusquedaProducto(e.target.value)}
-                placeholder="Buscar por nombre, marca, código o código de barras"
-                className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                {productosFiltrados.map((producto) => (
-                  <div
-                    key={producto.id}
-                    className="border border-gray-200 rounded p-4 hover:border-blue-500 transition"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="font-semibold text-gray-800 text-sm flex-1">
-                        {producto.nombre}
-                      </p>
-                      {(producto.descuento ?? 0) > 0 && (
-                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 shrink-0">
-                          {producto.descuento}% OFF
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2">
-                      {producto.marca} {producto.modelo}
-                    </p>
-                    <div className="mb-2">
-                      {(producto.descuento ?? 0) > 0 ? (
-                        <>
-                          <p className="text-xs text-gray-400 line-through">
-                            {formatearMoneda(producto.precio)}
-                          </p>
-                          <p className="text-lg font-bold text-green-600">
-                            {formatearMoneda(precioConDescuento(producto))}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-lg font-bold text-green-600">
-                          {formatearMoneda(producto.precio)}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mb-3">
-                      Código: {producto.codigo} | Barra: {producto.codigoBarra || 'N/A'}
-                    </p>
-                    <p className="text-xs text-gray-600 mb-3">
-                      Stock: {producto.stock} | IVA: {producto.iva}%
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => agregarAlCarrito(producto)}
-                      disabled={producto.stock === 0 || !clienteEncontrado}
-                      className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2 rounded transition text-sm"
-                    >
-                      {producto.stock === 0
-                        ? 'Sin Stock'
-                        : !clienteEncontrado
-                          ? 'Seleccione cliente para agregar'
-                          : '🛒 Agregar'}
-                    </button>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">📦 Consulta de Productos (POS)</h2>
+            <input
+              type="text"
+              value={busquedaProducto}
+              onChange={(e) => setBusquedaProducto(e.target.value)}
+              placeholder="Buscar por nombre, marca, código o código de barras"
+              className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+              {productosFiltrados.map((producto) => (
+                <div key={producto.id} className="border border-gray-200 rounded p-4 hover:border-blue-500 transition">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-semibold text-gray-800 text-sm flex-1">{producto.nombre}</p>
+                    {producto.esCombo && (producto.descuento ?? 0) > 0 && (
+                      <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 shrink-0">
+                        {producto.descuento}% OFF
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <p className="text-xs text-gray-600 mb-2">{producto.marca} {producto.modelo}</p>
+                  <div className="mb-2">
+                    {producto.esCombo && (producto.descuento ?? 0) > 0 ? (
+                      <>
+                        <p className="text-xs text-gray-400 line-through">{formatearMoneda(producto.precio)}</p>
+                        <p className="text-lg font-bold text-green-600">{formatearMoneda(precioConDescuento(producto))}</p>
+                      </>
+                    ) : (
+                      <p className="text-lg font-bold text-green-600">{formatearMoneda(producto.precio)}</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-600 mb-1">Código: {producto.codigo} | Barra: {producto.codigoBarra || 'N/A'}</p>
+                  <p className="text-xs text-gray-600 mb-3">Stock: {producto.stock} | IVA: {producto.iva}%</p>
+                  <button
+                    type="button"
+                    onClick={() => agregarAlCarrito(producto)}
+                    disabled={producto.stock === 0 || !clienteEncontrado}
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2 rounded transition text-sm"
+                  >
+                    {producto.stock === 0 ? 'Sin Stock' : !clienteEncontrado ? 'Seleccione cliente' : '🛒 Agregar'}
+                  </button>
+                </div>
+              ))}
             </div>
+          </div>
         </div>
 
-        {/* Panel Derecho: Carrito y Totales */}
+        {/* Panel Derecho: Carrito */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
             <h2 className="text-xl font-bold text-gray-800 mb-4">🛒 Carrito</h2>
@@ -608,48 +610,30 @@ const VendedorVentas: React.FC = () => {
               <>
                 <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
                   {carrito.map((item) => (
-                    <div
-                      key={item.producto.id}
-                      className="border border-gray-200 rounded p-3"
-                    >
-                      <p className="font-semibold text-sm text-gray-800">
-                        {item.producto.nombre}
-                      </p>
-                      <p className="text-xs text-gray-600 mb-2">
-                        {formatearMoneda(item.producto.precio)} c/u
-                      </p>
-
+                    <div key={item.producto.id} className="border border-gray-200 rounded p-3">
+                      <p className="font-semibold text-sm text-gray-800">{item.producto.nombre}</p>
+                      <p className="text-xs text-gray-600 mb-2">{formatearMoneda(item.producto.precio)} c/u</p>
                       <div className="flex items-center gap-2 mb-2">
                         <button
                           type="button"
                           onClick={() => actualizarCantidad(item.producto.id, item.cantidad - 1)}
                           className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                        >
-                          -
-                        </button>
+                        >-</button>
                         <input
                           type="number"
                           value={item.cantidad}
-                          onChange={(e) =>
-                            actualizarCantidad(
-                              item.producto.id,
-                              parseInt(e.target.value)
-                            )
-                          }
+                          onChange={(e) => actualizarCantidad(item.producto.id, parseInt(e.target.value))}
                           className="w-12 text-center border border-gray-300 rounded px-2 py-1 text-sm"
                         />
                         <button
                           type="button"
                           onClick={() => actualizarCantidad(item.producto.id, item.cantidad + 1)}
                           className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                        >
-                          +
-                        </button>
+                        >+</button>
                         <span className="text-sm font-bold text-green-600 ml-auto">
                           {formatearMoneda(item.cantidad * item.producto.precio)}
                         </span>
                       </div>
-
                       <button
                         type="button"
                         onClick={() => eliminarDelCarrito(item.producto.id)}
@@ -661,7 +645,7 @@ const VendedorVentas: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Vendedor que realizó la venta */}
+                {/* Vendedor */}
                 <div className="mb-4 pb-4 border-b">
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Vendedor <span className="text-red-500">*</span>
@@ -675,9 +659,7 @@ const VendedorVentas: React.FC = () => {
                   >
                     <option value="">— Seleccionar vendedor —</option>
                     {vendedores.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.nombre} {v.apellido}
-                      </option>
+                      <option key={v.id} value={v.id}>{v.nombre} {v.apellido}</option>
                     ))}
                   </select>
                   {!vendedorId && (
@@ -685,26 +667,9 @@ const VendedorVentas: React.FC = () => {
                   )}
                 </div>
 
-                {/* Descuento General */}
-                <div className="mb-4 pb-4 border-b">
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
-                    Descuento General ($)
-                  </label>
-                  <input
-                    type="number"
-                    step="10"
-                    min="0"
-                    value={descuentoGeneral}
-                    onChange={(e) => setDescuentoGeneral(parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
                 {/* Método de Pago */}
                 <div className="mb-4 pb-4 border-b">
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
-                    Método de Pago
-                  </label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">Método de Pago</label>
                   <select
                     value={metodoPago}
                     onChange={(e) => setMetodoPago(e.target.value as 'efectivo' | 'tarjeta' | 'transferencia')}
@@ -714,15 +679,9 @@ const VendedorVentas: React.FC = () => {
                     <option value="tarjeta">💳 Tarjeta</option>
                     <option value="transferencia">🏦 Transferencia</option>
                   </select>
-
-                  <div className="mt-3 text-xs rounded p-3 border border-slate-200 bg-slate-50">
-                    <p className="text-slate-600">
-                      Selecciona el método. La simulación de cobro aparece al finalizar la venta.
-                    </p>
-                  </div>
                 </div>
 
-                {/* Resumen de IVA */}
+                {/* Resumen IVA */}
                 <div className="text-xs text-gray-700 space-y-1 mb-4 pb-4 border-b">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
@@ -736,18 +695,12 @@ const VendedorVentas: React.FC = () => {
                     <span>IVA 10.5%:</span>
                     <span className="font-semibold">{formatearMoneda(totales.ivaReducido)}</span>
                   </div>
-                  <div className="flex justify-between text-red-600">
-                    <span>Descuento:</span>
-                    <span className="font-semibold">-{formatearMoneda(descuentoGeneral)}</span>
-                  </div>
                 </div>
 
                 {/* Total */}
                 <div className="bg-blue-50 p-4 rounded mb-4">
                   <p className="text-xs text-gray-600 mb-1">T O T A L</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatearMoneda(totales.totalBruto)}
-                  </p>
+                  <p className="text-2xl font-bold text-blue-600">{formatearMoneda(totales.totalBruto)}</p>
                 </div>
 
                 <button

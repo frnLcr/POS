@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificacionesProvider } from './context/NotificacionesContext';
 import { ToastProvider } from './context/ToastContext';
+import { CategoriasProvider } from './context/CategoriasContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 
@@ -23,9 +24,11 @@ import AdminRoles from './pages/Admin/AdminRoles';
 import GestionClientes from './pages/GestionClientes';
 
 // Encargado Pages
+import AdminCategorias from './pages/Admin/AdminCategorias';
 import EncargadoStock from './pages/Encargado/EncargadoStock';
 import EncargadoVendedores from './pages/Encargado/EncargadoVendedores';
 import EncargadoReportes from './pages/Encargado/EncargadoReportes';
+import EncargadoVentas from './pages/Encargado/EncargadoVentas';
 
 // Vendedor Pages
 import VendedorVentas from './pages/Vendedor/VendedorVentas';
@@ -82,6 +85,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <NotificacionesProvider>
+        <CategoriasProvider>
         <ToastProvider>
         <Routes>
           {/* Login */}
@@ -161,6 +165,18 @@ const App: React.FC = () => {
             }
           />
 
+          {/* Admin - Categorias */}
+          <Route
+            path="/admin/categorias"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminCategorias />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+
           {/* Encargado Routes */}
           <Route
             path="/encargado/stock"
@@ -192,6 +208,16 @@ const App: React.FC = () => {
               </AppLayout>
             }
           />
+          <Route
+            path="/encargado/ventas"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRole="encargado">
+                  <EncargadoVentas />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
 
           {/* Vendedor Routes */}
           <Route
@@ -208,7 +234,7 @@ const App: React.FC = () => {
             path="/vendedor/mis-ventas"
             element={
               <AppLayout>
-                <ProtectedRoute requiredRoles={["vendedor", "cajero"]}>
+                <ProtectedRoute requiredRole="vendedor">
                   <VendedorMisVentas />
                 </ProtectedRoute>
               </AppLayout>
@@ -276,6 +302,7 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         </ToastProvider>
+        </CategoriasProvider>
         </NotificacionesProvider>
       </AuthProvider>
     </BrowserRouter>

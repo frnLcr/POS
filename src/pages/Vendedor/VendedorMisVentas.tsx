@@ -4,7 +4,6 @@ import { mockProductos, mockClientes } from '../../data/mockData';
 import { formatearMoneda } from '../../utils/calculosVenta';
 
 const VendedorMisVentas: React.FC = () => {
-  // Ventas simuladas del vendedor
   const [ventas] = useState<Venta[]>([
     {
       id: 1,
@@ -42,6 +41,11 @@ const VendedorMisVentas: React.FC = () => {
     }
   ]);
 
+  // Créditos personales a sola firma aprobados
+  const creditosAprobados = [
+    { id: 1, clienteId: 1, monto: 50000, fechaAprobacion: '2025-04-05' }
+  ];
+
   const [selectedVente, setSelectedVenta] = useState<Venta | null>(null);
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
 
@@ -56,13 +60,18 @@ const VendedorMisVentas: React.FC = () => {
 
   const totalVendido = ventas.reduce((sum, v) => sum + v.totalBruto, 0);
   const cantidadVentas = ventas.length;
+  const totalCreditosAprobados = creditosAprobados.reduce((sum, c) => sum + c.monto, 0);
+
+  const bonoVentas = totalVendido * 0.1;
+  const bonoCreditos = totalCreditosAprobados * 0.03;
+  const bonoTotal = bonoVentas + bonoCreditos;
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">📋 Mis Ventas</h1>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Resumen ventas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-md p-6">
           <p className="text-gray-600 text-sm font-semibold mb-2">📊 Total de Ventas</p>
           <p className="text-3xl font-bold text-blue-600">{cantidadVentas}</p>
@@ -75,12 +84,29 @@ const VendedorMisVentas: React.FC = () => {
           </p>
           <p className="text-gray-600 text-xs mt-2">ingresos brutos</p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <p className="text-gray-600 text-sm font-semibold mb-2">🎁 Bono Estimado</p>
-          <p className="text-3xl font-bold text-purple-600">
-            {formatearMoneda(totalVendido * 0.1)}
-          </p>
-          <p className="text-gray-600 text-xs mt-2">10% de ventas</p>
+      </div>
+
+      {/* Bonos */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">🎁 Mis Bonos Estimados</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-purple-50 rounded-lg p-5 border border-purple-200">
+            <p className="text-purple-700 text-sm font-semibold mb-1">Bono por Ventas POS</p>
+            <p className="text-2xl font-bold text-purple-700">{formatearMoneda(bonoVentas)}</p>
+            <p className="text-purple-500 text-xs mt-2">10% sobre {formatearMoneda(totalVendido)}</p>
+          </div>
+          <div className="bg-indigo-50 rounded-lg p-5 border border-indigo-200">
+            <p className="text-indigo-700 text-sm font-semibold mb-1">Bono por Créditos</p>
+            <p className="text-2xl font-bold text-indigo-700">{formatearMoneda(bonoCreditos)}</p>
+            <p className="text-indigo-500 text-xs mt-2">
+              3% sobre {formatearMoneda(totalCreditosAprobados)} aprobados ({creditosAprobados.length} crédito{creditosAprobados.length !== 1 ? 's' : ''})
+            </p>
+          </div>
+          <div className="bg-green-50 rounded-lg p-5 border border-green-300">
+            <p className="text-green-700 text-sm font-semibold mb-1">Bono Total Estimado</p>
+            <p className="text-2xl font-bold text-green-700">{formatearMoneda(bonoTotal)}</p>
+            <p className="text-green-500 text-xs mt-2">ventas + créditos personales</p>
+          </div>
         </div>
       </div>
 
@@ -95,27 +121,13 @@ const VendedorMisVentas: React.FC = () => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100 border-b-2 border-gray-300">
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                    N° Factura
-                  </th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                    Método
-                  </th>
-                  <th className="px-6 py-3 text-right font-semibold text-gray-700">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-center font-semibold text-gray-700">
-                    Acciones
-                  </th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">N° Factura</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Cliente</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Tipo</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Método</th>
+                  <th className="px-6 py-3 text-right font-semibold text-gray-700">Total</th>
+                  <th className="px-6 py-3 text-center font-semibold text-gray-700">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,22 +143,15 @@ const VendedorMisVentas: React.FC = () => {
                         {venta.tipoFactura === 'A' ? 'Factura A' : 'Factura B'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm capitalize">
-                      {venta.metodoPago === 'efectivo'
-                        ? '💵'
-                        : venta.metodoPago === 'tarjeta'
-                          ? '💳'
-                          : '🏦'}
+                    <td className="px-6 py-4 text-sm">
+                      {venta.metodoPago === 'efectivo' ? '💵' : venta.metodoPago === 'tarjeta' ? '💳' : '🏦'}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-green-600">
                       {formatearMoneda(venta.totalBruto)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => {
-                          setSelectedVenta(venta);
-                          setMostrarDetalles(true);
-                        }}
+                        onClick={() => { setSelectedVenta(venta); setMostrarDetalles(true); }}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition"
                       >
                         👁️ Ver
@@ -166,12 +171,7 @@ const VendedorMisVentas: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 overflow-y-auto">
             <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center sticky top-0">
               <h2 className="text-xl font-bold">Detalles de Venta</h2>
-              <button
-                onClick={() => setMostrarDetalles(false)}
-                className="text-2xl hover:text-gray-200"
-              >
-                ✕
-              </button>
+              <button onClick={() => setMostrarDetalles(false)} className="text-2xl hover:text-gray-200">✕</button>
             </div>
 
             <div className="p-6 space-y-4">
@@ -191,9 +191,7 @@ const VendedorMisVentas: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-600 font-semibold">Cliente</p>
-                  <p className="text-lg font-bold">
-                    {getNombreCliente(selectedVente.clienteId)}
-                  </p>
+                  <p className="text-lg font-bold">{getNombreCliente(selectedVente.clienteId)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600 font-semibold">Tipo de Factura</p>
@@ -208,12 +206,8 @@ const VendedorMisVentas: React.FC = () => {
                 <div className="space-y-2">
                   {selectedVente.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                      <span>
-                        {item.cantidad}x {getNombreProducto(item.productoId)}
-                      </span>
-                      <span className="font-semibold">
-                        {formatearMoneda(item.subtotal)}
-                      </span>
+                      <span>{item.cantidad}x {getNombreProducto(item.productoId)}</span>
+                      <span className="font-semibold">{formatearMoneda(item.subtotal)}</span>
                     </div>
                   ))}
                 </div>
@@ -222,21 +216,15 @@ const VendedorMisVentas: React.FC = () => {
               <div className="border-t pt-4 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span className="font-semibold">
-                    {formatearMoneda(selectedVente.subtotal)}
-                  </span>
+                  <span className="font-semibold">{formatearMoneda(selectedVente.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>IVA:</span>
-                  <span className="font-semibold">
-                    {formatearMoneda(selectedVente.totalIva)}
-                  </span>
+                  <span className="font-semibold">{formatearMoneda(selectedVente.totalIva)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-green-600">
-                    {formatearMoneda(selectedVente.totalBruto)}
-                  </span>
+                  <span className="text-green-600">{formatearMoneda(selectedVente.totalBruto)}</span>
                 </div>
               </div>
             </div>

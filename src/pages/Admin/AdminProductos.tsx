@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import CRUDTable from '../../components/CRUDTable';
 import FormModal from '../../components/FormModal';
 import { Producto } from '../../types/index';
-import { mockProductos, mockCategorias } from '../../data/mockData';
+import { mockProductos } from '../../data/mockData';
 import { formatearMoneda } from '../../utils/calculosVenta';
 import { useToast } from '../../context/ToastContext';
+import { useCategorias } from '../../context/CategoriasContext';
 
 const AdminProductos: React.FC = () => {
   const toast = useToast();
+  const { categorias } = useCategorias();
   const [productos, setProductos] = useState<Producto[]>(mockProductos);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -51,7 +53,7 @@ const AdminProductos: React.FC = () => {
       precio: 0,
       iva: 21,
       stock: 0,
-      categoriaId: 1,
+      categoriaId: 0,
       esCombo: false,
       productosCombo: [],
       descuento: 0
@@ -61,6 +63,10 @@ const AdminProductos: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.categoriaId || formData.categoriaId === 0) {
+      toast.error('Debe seleccionar una categoría para el producto');
+      return;
+    }
     if (editingId) {
       setProductos(productos.map((p) => (p.id === editingId ? formData : p)));
       toast.success('Producto actualizado correctamente');
@@ -72,7 +78,7 @@ const AdminProductos: React.FC = () => {
   };
 
   const getNombreCategoria = (catId: number) => {
-    return mockCategorias.find((c) => c.id === catId)?.nombre || 'N/A';
+    return categorias.find((c) => c.id === catId)?.nombre || 'N/A';
   };
 
   const toggleProductoCombo = (productoId: number) => {
@@ -105,7 +111,7 @@ const AdminProductos: React.FC = () => {
           {
             key: 'descuento',
             label: 'Descuento',
-            render: (d) => d ? (
+            render: (d, item) => item.esCombo && d ? (
               <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">{d}% OFF</span>
             ) : <span className="text-gray-400 text-xs">—</span>
           },
@@ -215,7 +221,7 @@ const AdminProductos: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Categoría
+              Categoría <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.categoriaId}
@@ -225,14 +231,21 @@ const AdminProductos: React.FC = () => {
                   categoriaId: parseInt(e.target.value)
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500 ${
+                formData.categoriaId === 0 ? 'border-red-400 text-gray-400' : 'border-gray-300 text-gray-900'
+              }`}
+              required
             >
-              {mockCategorias.map((cat) => (
+              <option value={0} disabled>— Seleccionar categoría —</option>
+              {categorias.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.nombre}
                 </option>
               ))}
             </select>
+            {formData.categoriaId === 0 && (
+              <p className="text-red-500 text-xs mt-1">Debe seleccionar una categoría</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -299,35 +312,13 @@ const AdminProductos: React.FC = () => {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Descuento (%) — 0 = sin descuento
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="1"
-            value={formData.descuento ?? 0}
-            onChange={(e) =>
-              setFormData({ ...formData, descuento: parseFloat(e.target.value) || 0 })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          />
-          {(formData.descuento ?? 0) > 0 && (
-            <p className="text-xs text-green-600 mt-1">
-              Precio final: {formatearMoneda(formData.precio * (1 - (formData.descuento ?? 0) / 100))}
-            </p>
-          )}
-        </div>
-
         <div className="border-t-2 pt-4">
           <label className="flex items-center gap-2 mb-4 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.esCombo || false}
               onChange={(e) =>
-                setFormData({ ...formData, esCombo: e.target.checked })
+                setFormData({ ...formData, esCombo: e.target.checked, descuento: e.target.checked ? (formData.descuento ?? 0) : 0 })
               }
               className="w-4 h-4"
             />
@@ -337,7 +328,29 @@ const AdminProductos: React.FC = () => {
           </label>
 
           {formData.esCombo && (
-            <div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descuento del combo (%) — 0 = sin descuento
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={formData.descuento ?? 0}
+                  onChange={(e) =>
+                    setFormData({ ...formData, descuento: parseFloat(e.target.value) || 0 })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                />
+                {(formData.descuento ?? 0) > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Precio final del combo: {formatearMoneda(formData.precio * (1 - (formData.descuento ?? 0) / 100))}
+                  </p>
+                )}
+              </div>
+              <div>
               <p className="text-sm font-semibold text-gray-700 mb-2">
                 Seleccionar productos para el combo:
               </p>
@@ -362,6 +375,7 @@ const AdminProductos: React.FC = () => {
                       </span>
                     </label>
                   ))}
+              </div>
               </div>
             </div>
           )}
