@@ -94,12 +94,12 @@ const menuItems: MenuItem[] = [
     roles: ['cajero', 'vendedor']
   },
 
-  // Clientes (admin + vendedor)
+  // Clientes (admin + encargado + vendedor + cajero)
   {
     label: 'Clientes',
     path: '/clientes',
     icon: '👤',
-    roles: ['admin', 'vendedor']
+    roles: ['admin', 'encargado', 'vendedor', 'cajero']
   },
 
   // Vendedor

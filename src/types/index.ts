@@ -103,6 +103,7 @@ export interface Cliente {
   email?: string;
   telefono?: string;
   posicionFiscal: 'responsable_inscripto' | 'monotributista' | 'consumidor_final';
+  suscriptoNewsletter?: boolean;
 }
 
 export interface ItemVenta {

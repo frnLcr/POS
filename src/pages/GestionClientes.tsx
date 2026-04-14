@@ -13,7 +13,8 @@ const emptyCliente: Cliente = {
   razonSocial: '',
   email: '',
   telefono: '',
-  posicionFiscal: 'consumidor_final'
+  posicionFiscal: 'consumidor_final',
+  suscriptoNewsletter: false
 };
 
 const GestionClientes: React.FC = () => {
@@ -42,11 +43,15 @@ const GestionClientes: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const data: Cliente = {
+      ...formData,
+      razonSocial: formData.posicionFiscal === 'consumidor_final' ? undefined : formData.razonSocial
+    };
     if (editingId) {
-      setClientes(clientes.map((c) => (c.id === editingId ? formData : c)));
+      setClientes(clientes.map((c) => (c.id === editingId ? data : c)));
       toast.success('Cliente actualizado correctamente');
     } else {
-      setClientes([...clientes, formData]);
+      setClientes([...clientes, data]);
       toast.success('Cliente creado correctamente');
     }
     setIsModalOpen(false);
@@ -87,6 +92,37 @@ const GestionClientes: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
       >
+        {/* CUIT / CUIL */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">CUIT / CUIL</label>
+          <input
+            type="text"
+            value={formData.cuitCuil}
+            onChange={(e) => setFormData({ ...formData, cuitCuil: e.target.value })}
+            placeholder="20-12345678-9"
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            required
+          />
+        </div>
+
+        {/* Condición frente al IVA */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Condición frente al IVA</label>
+          <select
+            value={formData.posicionFiscal}
+            onChange={(e) => {
+              const pf = e.target.value as Cliente['posicionFiscal'];
+              setFormData({ ...formData, posicionFiscal: pf, razonSocial: pf === 'consumidor_final' ? '' : formData.razonSocial });
+            }}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          >
+            <option value="consumidor_final">Consumidor Final</option>
+            <option value="monotributista">Monotributista</option>
+            <option value="responsable_inscripto">Responsable Inscripto</option>
+          </select>
+        </div>
+
+        {/* Nombre / Apellido */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre</label>
@@ -110,29 +146,29 @@ const GestionClientes: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">CUIT / CUIL</label>
-            <input
-              type="text"
-              value={formData.cuitCuil}
-              onChange={(e) => setFormData({ ...formData, cuitCuil: e.target.value })}
-              placeholder="20-12345678-9"
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Razón Social</label>
-            <input
-              type="text"
-              value={formData.razonSocial ?? ''}
-              onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            />
-          </div>
+        {/* Razón Social — bloqueada para consumidor final */}
+        <div>
+          <label className={`block text-sm font-semibold mb-2 ${formData.posicionFiscal === 'consumidor_final' ? 'text-gray-400' : 'text-gray-700'}`}>
+            Razón Social
+            {formData.posicionFiscal === 'consumidor_final' && (
+              <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para Consumidor Final)</span>
+            )}
+          </label>
+          <input
+            type="text"
+            value={formData.razonSocial ?? ''}
+            onChange={(e) => setFormData({ ...formData, razonSocial: e.target.value })}
+            disabled={formData.posicionFiscal === 'consumidor_final'}
+            className={`w-full px-4 py-2 border rounded transition ${
+              formData.posicionFiscal === 'consumidor_final'
+                ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 focus:outline-none focus:border-blue-500'
+            }`}
+            placeholder={formData.posicionFiscal === 'consumidor_final' ? '—' : 'Razón Social'}
+          />
         </div>
 
+        {/* Email / Teléfono */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
@@ -154,20 +190,16 @@ const GestionClientes: React.FC = () => {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Posición Fiscal</label>
-          <select
-            value={formData.posicionFiscal}
-            onChange={(e) =>
-              setFormData({ ...formData, posicionFiscal: e.target.value as Cliente['posicionFiscal'] })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-          >
-            <option value="consumidor_final">Consumidor Final</option>
-            <option value="monotributista">Monotributista</option>
-            <option value="responsable_inscripto">Responsable Inscripto</option>
-          </select>
-        </div>
+        {/* Newsletter */}
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={formData.suscriptoNewsletter ?? false}
+            onChange={(e) => setFormData({ ...formData, suscriptoNewsletter: e.target.checked })}
+            className="w-4 h-4 accent-blue-600"
+          />
+          <span className="text-sm font-semibold text-gray-700">Suscripto a newsletter</span>
+        </label>
       </FormModal>
     </div>
   );

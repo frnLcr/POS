@@ -264,7 +264,7 @@ const App: React.FC = () => {
             path="/clientes"
             element={
               <AppLayout>
-                <ProtectedRoute requiredRoles={['admin', 'vendedor']}>
+                <ProtectedRoute requiredRoles={['admin', 'encargado', 'vendedor', 'cajero']}>
                   <GestionClientes />
                 </ProtectedRoute>
               </AppLayout>

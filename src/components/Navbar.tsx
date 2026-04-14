@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useNotificaciones } from '../context/NotificacionesContext';
 
 const Navbar: React.FC = () => {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, role } = useAuth();
+  const puedeVerNotificaciones = role === 'admin' || role === 'encargado';
   const navigate = useNavigate();
   const { notificaciones, noLeidas, marcarLeida, marcarTodasLeidas } = useNotificaciones();
   const [campanaAbierta, setCampanaAbierta] = useState(false);
@@ -30,8 +31,8 @@ const Navbar: React.FC = () => {
           <span className="text-slate-300 text-sm md:text-base">Sistema Punto de Venta</span>
         </div>
         <div className="flex items-center gap-4">
-          {/* Campana de notificaciones */}
-          <div className="relative">
+          {/* Campana de notificaciones — solo admin y encargado */}
+          {puedeVerNotificaciones && <div className="relative">
             <button
               onClick={() => setCampanaAbierta(!campanaAbierta)}
               className="relative p-2 rounded-lg hover:bg-slate-700 transition"
@@ -95,7 +96,7 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
           <div className="text-sm text-right hidden md:block">
             <p className="font-semibold text-white">{usuario?.nombre} {usuario?.apellido}</p>

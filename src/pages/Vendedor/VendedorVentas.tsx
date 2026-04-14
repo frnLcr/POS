@@ -1,12 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Cliente, Venta } from '../../types/index';
-import { mockProductos, mockClientes } from '../../data/mockData';
+import { mockProductos, mockClientes, mockUsuarios } from '../../data/mockData';
 import {
   calcularIVADual,
   formatearMoneda,
   determinarTipoFactura
 } from '../../utils/calculosVenta';
-import { useNotificaciones } from '../../context/NotificacionesContext';
+
+const vendedores = mockUsuarios.filter((u) => u.roleId === 4);
+
+const emptyAltaForm: Omit<Cliente, 'id'> = {
+  nombre: '',
+  apellido: '',
+  cuitCuil: '',
+  razonSocial: '',
+  email: '',
+  telefono: '',
+  posicionFiscal: 'consumidor_final',
+  suscriptoNewsletter: false
+};
 
 interface CarritoItem {
   producto: typeof mockProductos[0];
@@ -15,7 +27,7 @@ interface CarritoItem {
 }
 
 const VendedorVentas: React.FC = () => {
-  const { notificaciones } = useNotificaciones();
+  const [clientes, setClientes] = useState<Cliente[]>(mockClientes);
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null);
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [documentoBusqueda, setDocumentoBusqueda] = useState('');
@@ -29,8 +41,10 @@ const VendedorVentas: React.FC = () => {
   const [cargandoValidacion, setCargandoValidacion] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState(false);
   const [numeroFactura, setNumeroFactura] = useState(0);
-  const [mostrarOptInNotif, setMostrarOptInNotif] = useState(false);
-  const [notifAceptadas, setNotifAceptadas] = useState(false);
+  const [mostrarConfirmAlta, setMostrarConfirmAlta] = useState(false);
+  const [mostrarFormAlta, setMostrarFormAlta] = useState(false);
+  const [altaForm, setAltaForm] = useState<Omit<Cliente, 'id'>>(emptyAltaForm);
+  const [vendedorId, setVendedorId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!procesandoVenta || segundosProcesando <= 0) return;
@@ -56,57 +70,36 @@ const VendedorVentas: React.FC = () => {
       setDescuentoGeneral(0);
       setVentaCompletada(false);
       setVentaPendiente(null);
+      setVendedorId(null);
     }, 3000);
   }, [procesandoVenta, segundosProcesando, ventaPendiente]);
 
   const buscarCliente = async () => {
+    if (!documentoBusqueda.trim()) return;
     setCargandoValidacion(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simular API
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const cliente = mockClientes.find(
-      (c) => c.dni === documentoBusqueda || c.cuit === documentoBusqueda
-    );
+    const cliente = clientes.find((c) => c.cuitCuil === documentoBusqueda.trim());
 
     if (cliente) {
       setClienteEncontrado(cliente);
     } else {
-      alert('Cliente no encontrado. Datos simulados.');
-      setClienteEncontrado({
-        id: 999,
-        nombre: 'Cliente',
-        apellido: 'Nuevo',
-        dni: documentoBusqueda,
-        email: 'cliente@example.com',
-        posicionFiscal: 'consumidor_final',
-        domicilio: 'Calle simulada'
-      });
+      setAltaForm({ ...emptyAltaForm, cuitCuil: documentoBusqueda.trim() });
+      setMostrarConfirmAlta(true);
     }
     setCargandoValidacion(false);
-
-    // Preguntar por notificaciones si no lo hizo antes
-    const yaAcepto = localStorage.getItem(`notif_${documentoBusqueda}`);
-    if (!yaAcepto && Notification.permission !== 'denied') {
-      setMostrarOptInNotif(true);
-    }
   };
 
-  const aceptarNotificaciones = async () => {
-    const permiso = await Notification.requestPermission();
-    if (permiso === 'granted') {
-      localStorage.setItem(`notif_${documentoBusqueda}`, 'true');
-      setNotifAceptadas(true);
-      // Enviar notificaciones activas al cliente
-      const ofertasActivas = notificaciones.filter((n) => n.tipo === 'oferta');
-      ofertasActivas.forEach((n) => {
-        new Notification(n.titulo, { body: n.mensaje, icon: '/favicon.ico' });
-      });
-    }
-    setMostrarOptInNotif(false);
-  };
-
-  const rechazarNotificaciones = () => {
-    localStorage.setItem(`notif_${documentoBusqueda}`, 'rechazado');
-    setMostrarOptInNotif(false);
+  const handleAltaCliente = (e: React.FormEvent) => {
+    e.preventDefault();
+    const nuevoCliente: Cliente = {
+      ...altaForm,
+      id: Math.max(...clientes.map((c) => c.id), 0) + 1,
+      razonSocial: altaForm.posicionFiscal === 'consumidor_final' ? undefined : altaForm.razonSocial
+    };
+    setClientes([...clientes, nuevoCliente]);
+    setClienteEncontrado(nuevoCliente);
+    setMostrarFormAlta(false);
   };
 
   const precioConDescuento = (producto: typeof mockProductos[0]) => {
@@ -194,6 +187,11 @@ const VendedorVentas: React.FC = () => {
       return;
     }
 
+    if (!vendedorId) {
+      alert('Debes indicar el vendedor que realizó la venta');
+      return;
+    }
+
     if (procesandoVenta) {
       alert('Espera que termine el proceso de la venta');
       return;
@@ -207,7 +205,7 @@ const VendedorVentas: React.FC = () => {
       numero: Math.floor(Math.random() * 99999),
       fecha: new Date().toISOString().split('T')[0],
       clienteId: clienteEncontrado.id,
-      vendedorId: 3, // Usuario actual simulado
+      vendedorId: vendedorId,
       sucursalId: 1, // Sucursal actual simulada
       items: carrito.map((item) => ({
         productoId: item.producto.id,
@@ -248,40 +246,172 @@ const VendedorVentas: React.FC = () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      {/* Modal opt-in notificaciones */}
-      {mostrarOptInNotif && (
+      {/* Modal: cliente no encontrado → confirmar alta */}
+      {mostrarConfirmAlta && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm p-8 text-center">
-            <p className="text-4xl mb-4">🔔</p>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              ¿Recibir notificaciones de ofertas?
-            </h2>
-            <p className="text-slate-500 text-sm mb-6">
-              El cliente puede recibir alertas de descuentos y nuevos productos directamente en su dispositivo.
+            <p className="text-4xl mb-4">🔍</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Cliente no encontrado</h2>
+            <p className="text-slate-500 text-sm mb-1">
+              El CUIT/CUIL <strong>{documentoBusqueda}</strong> no figura en el sistema.
             </p>
+            <p className="text-slate-600 text-sm mb-6">¿Desea dar de alta un nuevo cliente?</p>
             <div className="flex gap-3">
               <button
-                onClick={rechazarNotificaciones}
+                onClick={() => setMostrarConfirmAlta(false)}
                 className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-lg transition"
               >
-                Ahora no
+                Cancelar
               </button>
               <button
-                onClick={aceptarNotificaciones}
+                onClick={() => { setMostrarConfirmAlta(false); setMostrarFormAlta(true); }}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition"
               >
-                Aceptar
+                Dar de Alta
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {notifAceptadas && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700 font-medium">
-          🔔 El cliente recibirá notificaciones de ofertas y productos.
+      {/* Modal: formulario alta de cliente */}
+      {mostrarFormAlta && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-8">
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Alta de Cliente</h2>
+            <form onSubmit={handleAltaCliente} className="space-y-4">
+
+              {/* CUIT/CUIL - readonly, pre-cargado */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">CUIT / CUIL</label>
+                <input
+                  type="text"
+                  value={altaForm.cuitCuil}
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-200 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Posición Fiscal */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Condición frente al IVA</label>
+                <select
+                  value={altaForm.posicionFiscal}
+                  onChange={(e) => {
+                    const pf = e.target.value as Cliente['posicionFiscal'];
+                    setAltaForm({ ...altaForm, posicionFiscal: pf, razonSocial: pf === 'consumidor_final' ? '' : altaForm.razonSocial });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                >
+                  <option value="consumidor_final">Consumidor Final</option>
+                  <option value="monotributista">Monotributista</option>
+                  <option value="responsable_inscripto">Responsable Inscripto</option>
+                </select>
+              </div>
+
+              {/* Nombre y Apellido */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    value={altaForm.nombre}
+                    onChange={(e) => setAltaForm({ ...altaForm, nombre: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    required
+                    placeholder="Nombre"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    value={altaForm.apellido}
+                    onChange={(e) => setAltaForm({ ...altaForm, apellido: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    required
+                    placeholder="Apellido"
+                  />
+                </div>
+              </div>
+
+              {/* Razón Social — solo habilitada para no-consumidor final */}
+              <div>
+                <label className={`block text-sm font-semibold mb-1 ${altaForm.posicionFiscal === 'consumidor_final' ? 'text-gray-400' : 'text-gray-700'}`}>
+                  Razón Social
+                  {altaForm.posicionFiscal === 'consumidor_final' && (
+                    <span className="ml-2 text-xs font-normal text-gray-400">(no aplica para Consumidor Final)</span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  value={altaForm.razonSocial ?? ''}
+                  onChange={(e) => setAltaForm({ ...altaForm, razonSocial: e.target.value })}
+                  disabled={altaForm.posicionFiscal === 'consumidor_final'}
+                  className={`w-full px-4 py-2 border rounded transition ${
+                    altaForm.posicionFiscal === 'consumidor_final'
+                      ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 focus:outline-none focus:border-blue-500'
+                  }`}
+                  placeholder={altaForm.posicionFiscal === 'consumidor_final' ? '—' : 'Razón Social'}
+                />
+              </div>
+
+              {/* Email y Teléfono */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={altaForm.email ?? ''}
+                    onChange={(e) => setAltaForm({ ...altaForm, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    placeholder="email@ejemplo.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    value={altaForm.telefono ?? ''}
+                    onChange={(e) => setAltaForm({ ...altaForm, telefono: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    placeholder="Teléfono"
+                  />
+                </div>
+              </div>
+
+              {/* Newsletter */}
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={altaForm.suscriptoNewsletter ?? false}
+                  onChange={(e) => setAltaForm({ ...altaForm, suscriptoNewsletter: e.target.checked })}
+                  className="w-4 h-4 accent-blue-600"
+                />
+                <span className="text-sm text-gray-700">Suscripto a newsletter</span>
+              </label>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMostrarFormAlta(false)}
+                  className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg transition"
+                >
+                  Registrar y Continuar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
+
 
       {procesandoVenta && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -529,6 +659,30 @@ const VendedorVentas: React.FC = () => {
                       </button>
                     </div>
                   ))}
+                </div>
+
+                {/* Vendedor que realizó la venta */}
+                <div className="mb-4 pb-4 border-b">
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Vendedor <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={vendedorId ?? ''}
+                    onChange={(e) => setVendedorId(e.target.value ? Number(e.target.value) : null)}
+                    className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500 ${
+                      !vendedorId ? 'border-amber-400 bg-amber-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">— Seleccionar vendedor —</option>
+                    {vendedores.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.nombre} {v.apellido}
+                      </option>
+                    ))}
+                  </select>
+                  {!vendedorId && (
+                    <p className="text-xs text-amber-600 mt-1">Requerido para registrar la venta</p>
+                  )}
                 </div>
 
                 {/* Descuento General */}
