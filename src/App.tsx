@@ -247,12 +247,12 @@ const App: React.FC = () => {
             }
           />
 
-          {/* Admin - Notificaciones */}
+          {/* Admin/Encargado - Notificaciones */}
           <Route
             path="/admin/notificaciones"
             element={
               <AppLayout>
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRoles={['admin', 'encargado']}>
                   <AdminNotificaciones />
                 </ProtectedRoute>
               </AppLayout>

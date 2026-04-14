@@ -57,7 +57,7 @@ const menuItems: MenuItem[] = [
     label: 'Notificaciones',
     path: '/admin/notificaciones',
     icon: '🔔',
-    roles: ['admin']
+    roles: ['admin', 'encargado']
   },
 
   // Encargado

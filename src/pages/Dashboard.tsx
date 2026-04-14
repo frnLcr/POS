@@ -54,6 +54,27 @@ const Dashboard: React.FC = () => {
               color="bg-indigo-500"
               onClick={() => navigate('/admin/creditos')}
             />
+            <DashboardCard
+              title="Roles y Permisos"
+              icon="🔐"
+              description="Administrar roles y permisos del sistema"
+              color="bg-slate-600"
+              onClick={() => navigate('/admin/roles')}
+            />
+            <DashboardCard
+              title="Notificaciones"
+              icon="🔔"
+              description="Gestionar y enviar notificaciones"
+              color="bg-yellow-500"
+              onClick={() => navigate('/admin/notificaciones')}
+            />
+            <DashboardCard
+              title="Clientes"
+              icon="👤"
+              description="Gestionar clientes del sistema"
+              color="bg-teal-500"
+              onClick={() => navigate('/clientes')}
+            />
           </div>
         </div>
       );
@@ -84,6 +105,20 @@ const Dashboard: React.FC = () => {
               description="Analizar ventas y movimientos"
               color="bg-purple-500"
               onClick={() => navigate('/encargado/reportes')}
+            />
+            <DashboardCard
+              title="Notificaciones"
+              icon="🔔"
+              description="Gestionar y enviar notificaciones"
+              color="bg-yellow-500"
+              onClick={() => navigate('/admin/notificaciones')}
+            />
+            <DashboardCard
+              title="Clientes"
+              icon="👤"
+              description="Gestionar clientes del sistema"
+              color="bg-teal-500"
+              onClick={() => navigate('/clientes')}
             />
           </div>
         </div>
@@ -127,6 +162,20 @@ const Dashboard: React.FC = () => {
           <h2 className="text-3xl font-bold text-gray-800">Panel del Vendedor</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <DashboardCard
+              title="Nueva Venta"
+              icon="🛒"
+              description="Registrar una nueva venta"
+              color="bg-green-500"
+              onClick={() => navigate('/vendedor/ventas')}
+            />
+            <DashboardCard
+              title="Mis Ventas"
+              icon="📋"
+              description="Historial de ventas realizadas"
+              color="bg-blue-500"
+              onClick={() => navigate('/vendedor/mis-ventas')}
+            />
+            <DashboardCard
               title="Solicitar Crédito"
               icon="💰"
               description="Solicitar crédito para cliente"
@@ -139,6 +188,13 @@ const Dashboard: React.FC = () => {
               description="Ver estado de créditos"
               color="bg-purple-500"
               onClick={() => navigate('/vendedor/mis-creditos')}
+            />
+            <DashboardCard
+              title="Clientes"
+              icon="👤"
+              description="Gestionar clientes del sistema"
+              color="bg-teal-500"
+              onClick={() => navigate('/clientes')}
             />
           </div>
         </div>
