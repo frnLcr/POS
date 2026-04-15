@@ -159,13 +159,6 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/vendedor/ventas')}
             />
             <DashboardCard
-              title="Mis Ventas"
-              icon="📋"
-              description="Historial de ventas realizadas"
-              color="bg-blue-500"
-              onClick={() => navigate('/vendedor/mis-ventas')}
-            />
-            <DashboardCard
               title="Consulta Productos"
               icon="🔎"
               description="Consultar stock y precios por código"
@@ -182,13 +175,6 @@ const Dashboard: React.FC = () => {
         <div className="space-y-6">
           <h2 className="text-3xl font-bold text-gray-800">Panel del Vendedor</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DashboardCard
-              title="Nueva Venta"
-              icon="🛒"
-              description="Registrar una nueva venta"
-              color="bg-green-500"
-              onClick={() => navigate('/vendedor/ventas')}
-            />
             <DashboardCard
               title="Mis Ventas"
               icon="📋"
