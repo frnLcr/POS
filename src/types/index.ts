@@ -74,6 +74,7 @@ export interface Notificacion {
   titulo: string;
   mensaje: string;
   productoId?: number;
+  comboId?: number;
   fecha: string;
   tipo: 'oferta' | 'nuevo_producto' | 'stock' | 'general';
 }
