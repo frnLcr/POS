@@ -31,6 +31,17 @@ const LABEL_FISCAL: Record<Cliente['posicionFiscal'], string> = {
   consumidor_final: 'Consumidor Final'
 };
 
+// Formatea CUIL/CUIT al formato xx-xxxxxxxx-x
+const formatCUIL = (value: string): string => {
+  // Solo mantener números
+  const soloNumeros = value.replace(/[^0-9]/g, '').slice(0, 11);
+  
+  if (soloNumeros.length === 0) return '';
+  if (soloNumeros.length <= 2) return soloNumeros;
+  if (soloNumeros.length <= 10) return `${soloNumeros.slice(0, 2)}-${soloNumeros.slice(2)}`;
+  return `${soloNumeros.slice(0, 2)}-${soloNumeros.slice(2, 10)}-${soloNumeros.slice(10)}`;
+};
+
 const VendedorVentas: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>(mockClientes);
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null);
@@ -85,11 +96,13 @@ const VendedorVentas: React.FC = () => {
     if (!documentoBusqueda.trim()) return;
     setCargandoValidacion(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
-    const cliente = clientes.find((c) => c.cuitCuil === documentoBusqueda.trim());
+    // Normalizar documentoBusqueda para comparar (solo números)
+    const documentoNormalizado = documentoBusqueda.replace(/[^0-9]/g, '');
+    const cliente = clientes.find((c) => c.cuitCuil.replace(/[^0-9]/g, '') === documentoNormalizado);
     if (cliente) {
       aplicarClienteEncontrado(cliente);
     } else {
-      setAltaForm({ ...emptyAltaForm, cuitCuil: documentoBusqueda.trim() });
+      setAltaForm({ ...emptyAltaForm, cuitCuil: documentoNormalizado });
       setMostrarConfirmAlta(true);
     }
     setCargandoValidacion(false);
@@ -425,9 +438,9 @@ const VendedorVentas: React.FC = () => {
               <input
                 type="text"
                 value={documentoBusqueda}
-                onChange={(e) => setDocumentoBusqueda(e.target.value.replace(/[^0-9-]/g, ''))}
+                onChange={(e) => setDocumentoBusqueda(formatCUIL(e.target.value))}
                 onKeyDown={(e) => { if (e.key === 'Enter') buscarCliente(); }}
-                placeholder="CUIT / CUIL (solo números)"
+                placeholder="CUIT / CUIL (ej: 20-12345678-9)"
                 className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                 inputMode="numeric"
               />
