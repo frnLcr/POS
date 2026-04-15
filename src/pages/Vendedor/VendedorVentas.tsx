@@ -425,7 +425,7 @@ const VendedorVentas: React.FC = () => {
               <input
                 type="text"
                 value={documentoBusqueda}
-                onChange={(e) => setDocumentoBusqueda(e.target.value.replace(/[^0-9\-]/g, ''))}
+                onChange={(e) => setDocumentoBusqueda(e.target.value.replace(/[^0-9-]/g, ''))}
                 onKeyDown={(e) => { if (e.key === 'Enter') buscarCliente(); }}
                 placeholder="CUIT / CUIL (solo números)"
                 className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
