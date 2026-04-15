@@ -55,6 +55,13 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/admin/creditos')}
             />
             <DashboardCard
+              title="Categorías"
+              icon="🏷️"
+              description="Gestionar categorías de productos"
+              color="bg-pink-500"
+              onClick={() => navigate('/admin/categorias')}
+            />
+            <DashboardCard
               title="Roles y Permisos"
               icon="🔐"
               description="Administrar roles y permisos del sistema"
@@ -105,6 +112,13 @@ const Dashboard: React.FC = () => {
               description="Analizar ventas y movimientos"
               color="bg-purple-500"
               onClick={() => navigate('/encargado/reportes')}
+            />
+            <DashboardCard
+              title="Ventas"
+              icon="💵"
+              description="Ver ventas de la sucursal"
+              color="bg-orange-500"
+              onClick={() => navigate('/encargado/ventas')}
             />
             <DashboardCard
               title="Notificaciones"

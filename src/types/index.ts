@@ -75,16 +75,12 @@ export interface Notificacion {
   mensaje: string;
   productoId?: number;
   fecha: string;
-  leida: boolean;
   tipo: 'oferta' | 'nuevo_producto' | 'stock' | 'general';
 }
 
 export interface NotificacionesContextType {
   notificaciones: Notificacion[];
-  agregarNotificacion: (n: Omit<Notificacion, 'id' | 'fecha' | 'leida'>) => void;
-  marcarLeida: (id: number) => void;
-  marcarTodasLeidas: () => void;
-  noLeidas: number;
+  agregarNotificacion: (n: Omit<Notificacion, 'id' | 'fecha'>) => void;
 }
 
 export interface Categoria {

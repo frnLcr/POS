@@ -148,7 +148,7 @@ const Sidebar: React.FC = () => {
           to="/dashboard"
           className="block px-4 py-2.5 rounded-xl bg-slate-700/30 hover:bg-slate-700/60 transition mb-4 font-semibold"
         >
-          📊 Dashboard
+          🏠 Inicio
         </Link>
 
         {filteredItems.map((item) => {

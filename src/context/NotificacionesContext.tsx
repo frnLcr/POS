@@ -10,7 +10,6 @@ const mockNotificacionesIniciales: Notificacion[] = [
     mensaje: 'Notebook Dell Inspiron 15 con 15% de descuento por tiempo limitado.',
     productoId: 1,
     fecha: new Date().toISOString(),
-    leida: false,
     tipo: 'oferta'
   },
   {
@@ -19,7 +18,6 @@ const mockNotificacionesIniciales: Notificacion[] = [
     mensaje: 'Tablet Samsung Galaxy Tab con 10% de descuento esta semana.',
     productoId: 2,
     fecha: new Date().toISOString(),
-    leida: false,
     tipo: 'oferta'
   }
 ];
@@ -27,12 +25,11 @@ const mockNotificacionesIniciales: Notificacion[] = [
 export const NotificacionesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>(mockNotificacionesIniciales);
 
-  const agregarNotificacion = (n: Omit<Notificacion, 'id' | 'fecha' | 'leida'>) => {
+  const agregarNotificacion = (n: Omit<Notificacion, 'id' | 'fecha'>) => {
     const nueva: Notificacion = {
       ...n,
       id: Date.now(),
-      fecha: new Date().toISOString(),
-      leida: false
+      fecha: new Date().toISOString()
     };
     setNotificaciones((prev) => [nueva, ...prev]);
 
@@ -42,22 +39,8 @@ export const NotificacionesProvider: React.FC<{ children: React.ReactNode }> = (
     }
   };
 
-  const marcarLeida = (id: number) => {
-    setNotificaciones((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
-    );
-  };
-
-  const marcarTodasLeidas = () => {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
-  };
-
-  const noLeidas = notificaciones.filter((n) => !n.leida).length;
-
   return (
-    <NotificacionesContext.Provider
-      value={{ notificaciones, agregarNotificacion, marcarLeida, marcarTodasLeidas, noLeidas }}
-    >
+    <NotificacionesContext.Provider value={{ notificaciones, agregarNotificacion }}>
       {children}
     </NotificacionesContext.Provider>
   );

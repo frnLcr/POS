@@ -11,7 +11,7 @@ const tiposNotificacion: { value: Notificacion['tipo']; label: string }[] = [
 ];
 
 const AdminNotificaciones: React.FC = () => {
-  const { notificaciones, agregarNotificacion, marcarLeida, marcarTodasLeidas, noLeidas } = useNotificaciones();
+  const { notificaciones, agregarNotificacion } = useNotificaciones();
 
   const [form, setForm] = useState({
     titulo: '',
@@ -151,24 +151,7 @@ const AdminNotificaciones: React.FC = () => {
 
         {/* Historial */}
         <div className="bg-white rounded-xl shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-slate-700">
-              Historial
-              {noLeidas > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
-                  {noLeidas}
-                </span>
-              )}
-            </h2>
-            {noLeidas > 0 && (
-              <button
-                onClick={marcarTodasLeidas}
-                className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
-              >
-                Marcar todas como leídas
-              </button>
-            )}
-          </div>
+          <h2 className="text-lg font-bold text-slate-700 mb-4">Historial</h2>
 
           <div className="space-y-3 max-h-[500px] overflow-y-auto">
             {notificaciones.length === 0 ? (
@@ -177,33 +160,16 @@ const AdminNotificaciones: React.FC = () => {
               notificaciones.map((n) => (
                 <div
                   key={n.id}
-                  className={`rounded-lg p-4 border transition ${
-                    n.leida ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'
-                  }`}
+                  className="rounded-lg p-4 border border-gray-200 bg-white"
                 >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeColor[n.tipo]}`}>
-                          {tiposNotificacion.find((t) => t.value === n.tipo)?.label}
-                        </span>
-                        {!n.leida && (
-                          <span className="w-2 h-2 bg-blue-500 rounded-full inline-block" />
-                        )}
-                      </div>
-                      <p className="font-semibold text-sm text-gray-800">{n.titulo}</p>
-                      <p className="text-xs text-gray-600 mt-1">{n.mensaje}</p>
-                      <p className="text-xs text-gray-400 mt-2">{formatFecha(n.fecha)}</p>
-                    </div>
-                    {!n.leida && (
-                      <button
-                        onClick={() => marcarLeida(n.id)}
-                        className="text-xs text-gray-400 hover:text-gray-700 shrink-0"
-                      >
-                        ✓ Leída
-                      </button>
-                    )}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeColor[n.tipo]}`}>
+                      {tiposNotificacion.find((t) => t.value === n.tipo)?.label}
+                    </span>
                   </div>
+                  <p className="font-semibold text-sm text-gray-800">{n.titulo}</p>
+                  <p className="text-xs text-gray-600 mt-1">{n.mensaje}</p>
+                  <p className="text-xs text-gray-400 mt-2">{formatFecha(n.fecha)}</p>
                 </div>
               ))
             )}
