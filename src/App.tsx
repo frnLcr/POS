@@ -16,6 +16,7 @@ import AdminOrganizaciones from './pages/Admin/AdminOrganizaciones';
 import AdminSucursales from './pages/Admin/AdminSucursales';
 import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import AdminRubrosServicios from './pages/Admin/AdminRubrosServicios';
+import AdminServicios from './pages/Admin/AdminServicios';
 import AdminProductos from './pages/Admin/AdminProductos';
 import AdminCreditos from './pages/Admin/AdminCreditos';
 import AdminNotificaciones from './pages/Admin/AdminNotificaciones';
@@ -140,6 +141,16 @@ const App: React.FC = () => {
               <AppLayout>
                 <ProtectedRoute requiredRole="admin">
                   <AdminRubrosServicios />
+                </ProtectedRoute>
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/admin/servicios"
+            element={
+              <AppLayout>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminServicios />
                 </ProtectedRoute>
               </AppLayout>
             }

@@ -41,11 +41,18 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/admin/productos')}
             />
             <DashboardCard
-              title="Rubros y Servicios"
+              title="Rubros"
               icon="📋"
-              description="Configurar rubros y servicios"
+              description="Configurar rubros del sistema"
               color="bg-red-500"
               onClick={() => navigate('/admin/rubros-servicios')}
+            />
+            <DashboardCard
+              title="Servicios"
+              icon="🔧"
+              description="Configurar servicios del sistema"
+              color="bg-cyan-500"
+              onClick={() => navigate('/admin/servicios')}
             />
             <DashboardCard
               title="Créditos"
@@ -62,7 +69,7 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/admin/categorias')}
             />
             <DashboardCard
-              title="Roles y Permisos"
+              title="Roles"
               icon="🔐"
               description="Administrar roles y permisos del sistema"
               color="bg-slate-600"

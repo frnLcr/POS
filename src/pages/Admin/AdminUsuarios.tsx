@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import CRUDTable from '../../components/CRUDTable';
 import FormModal from '../../components/FormModal';
-import { Usuario, Role } from '../../types/index';
+import { Usuario } from '../../types/index';
 import { mockUsuarios, mockRoles, mockSucursales } from '../../data/mockData';
 import { useToast } from '../../context/ToastContext';
 
 const AdminUsuarios: React.FC = () => {
   const toast = useToast();
   const [usuarios, setUsuarios] = useState<Usuario[]>(mockUsuarios);
-  const [roles, setRoles] = useState<Role[]>(mockRoles);
-  const [vistaActiva, setVistaActiva] = useState<'usuarios' | 'roles'>('usuarios');
+  const roles = mockRoles;
 
   const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
   const [editingUsuarioId, setEditingUsuarioId] = useState<number | null>(null);
@@ -31,46 +30,8 @@ const AdminUsuarios: React.FC = () => {
   const [bajaModalId, setBajaModalId] = useState<number | null>(null);
   const [bajaForm, setBajaForm] = useState({ fechaBaja: new Date().toISOString().split('T')[0], motivoBaja: '' });
 
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
-  const [roleFormData, setRoleFormData] = useState<Role>({
-    id: 0,
-    nombre: '',
-    descripcion: '',
-    permisos: []
-  });
-
-  const permisosPosibles = [
-    'ver_usuarios',
-    'crear_usuario',
-    'editar_usuario',
-    'borrar_usuario',
-    'ver_organizaciones',
-    'crear_organizacion',
-    'editar_organizacion',
-    'borrar_organizacion',
-    'ver_sucursales',
-    'crear_sucursal',
-    'editar_sucursal',
-    'borrar_sucursal',
-    'ver_productos',
-    'crear_producto',
-    'editar_producto',
-    'borrar_producto',
-    'ver_stock',
-    'editar_stock',
-    'ver_vendedores',
-    'ver_reportes',
-    'crear_venta',
-    'ver_mis_ventas',
-    'solicitar_credito',
-    'ver_mis_creditos',
-    'consultar_productos'
-  ];
-
-  const getNombreRol = (roleId: number) => {
-    return roles.find((r) => r.id === roleId)?.nombre || 'N/A';
-  };
+  const getNombreRol = (roleId: number) =>
+    roles.find((r) => r.id === roleId)?.nombre || 'N/A';
 
   const getNombreSucursal = (sucursalId?: number) => {
     if (!sucursalId) return 'N/A';
@@ -131,146 +92,53 @@ const AdminUsuarios: React.FC = () => {
     setIsUsuarioModalOpen(false);
   };
 
-  const handleEditRole = (role: Role) => {
-    setEditingRoleId(role.id);
-    setRoleFormData(role);
-    setIsRoleModalOpen(true);
-  };
-
-  const handleDeleteRole = (id: number) => {
-    if (usuarios.some((u) => u.roleId === id)) {
-      alert('No se puede eliminar un rol que está asignado a usuarios');
-      return;
-    }
-
-    setRoles(roles.filter((r) => r.id !== id));
-  };
-
-  const handleAddRole = () => {
-    setEditingRoleId(null);
-    setRoleFormData({
-      id: Math.max(...roles.map((r) => r.id), 0) + 1,
-      nombre: '',
-      descripcion: '',
-      permisos: []
-    });
-    setIsRoleModalOpen(true);
-  };
-
-  const handleSubmitRole = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingRoleId) {
-      setRoles(roles.map((r) => (r.id === editingRoleId ? roleFormData : r)));
-      toast.success('Rol actualizado correctamente');
-    } else {
-      setRoles([...roles, roleFormData]);
-      toast.success('Rol creado correctamente');
-    }
-    setIsRoleModalOpen(false);
-  };
-
-  const togglePermiso = (permiso: string) => {
-    if (roleFormData.permisos.includes(permiso)) {
-      setRoleFormData({
-        ...roleFormData,
-        permisos: roleFormData.permisos.filter((p) => p !== permiso)
-      });
-      return;
-    }
-
-    setRoleFormData({
-      ...roleFormData,
-      permisos: [...roleFormData.permisos, permiso]
-    });
-  };
-
   return (
     <div className="p-8 bg-gray-50 min-h-screen space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-2 inline-flex gap-2">
-        <button
-          type="button"
-          onClick={() => setVistaActiva('usuarios')}
-          className={`px-4 py-2 rounded font-semibold ${
-            vistaActiva === 'usuarios' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          Usuarios
-        </button>
-        <button
-          type="button"
-          onClick={() => setVistaActiva('roles')}
-          className={`px-4 py-2 rounded font-semibold ${
-            vistaActiva === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          Roles
-        </button>
-      </div>
-
-      {vistaActiva === 'usuarios' ? (
-        <CRUDTable
-          title="Gestión de Usuarios"
-          searchPlaceholder="Buscar por nombre, email, CUIL..."
-          columns={[
-            {
-              key: 'nombre',
-              label: 'Nombre Completo',
-              render: (_, usuario) => (
-                <span className="flex items-center gap-2">
-                  {usuario.nombre} {usuario.apellido}
-                  {usuario.fechaBaja && (
-                    <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                      Baja
-                    </span>
-                  )}
-                </span>
-              )
-            },
-            { key: 'email', label: 'Email' },
-            {
-              key: 'roleId',
-              label: 'Rol',
-              render: (roleId) => getNombreRol(roleId)
-            },
-            {
-              key: 'sucursalId',
-              label: 'Sucursal',
-              render: (sucursalId) => getNombreSucursal(sucursalId)
-            },
-            { key: 'cuil', label: 'CUIL' },
-            { key: 'fechaCreacion', label: 'Alta' },
-            {
-              key: 'fechaBaja',
-              label: 'Fecha Baja',
-              render: (fechaBaja) => fechaBaja
-                ? <span className="text-red-600 text-xs font-medium">{fechaBaja}</span>
-                : <span className="text-gray-400 text-xs">—</span>
-            }
-          ]}
-          data={usuarios}
-          onEdit={handleEditUsuario}
-          onDelete={handleDeleteUsuario}
-          onAdd={handleAddUsuario}
-          skipInternalConfirm
-        />
-      ) : (
-        <CRUDTable
-          title="Gestión de Roles"
-          columns={[
-            { key: 'nombre', label: 'Nombre' },
-            { key: 'descripcion', label: 'Descripción' },
-            {
-              key: 'permisos',
-              label: 'Permisos',
-              render: (permisos) => `${permisos.length} permisos asignados`
-            }
-          ]}
-          data={roles}
-          onEdit={handleEditRole}
-          onDelete={handleDeleteRole}
-          onAdd={handleAddRole}
-        />
-      )}
+      <CRUDTable
+        title="Gestión de Usuarios"
+        searchPlaceholder="Buscar por nombre, email, CUIL..."
+        columns={[
+          {
+            key: 'nombre',
+            label: 'Nombre Completo',
+            render: (_, usuario) => (
+              <span className="flex items-center gap-2">
+                {usuario.nombre} {usuario.apellido}
+                {usuario.fechaBaja && (
+                  <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    Baja
+                  </span>
+                )}
+              </span>
+            )
+          },
+          { key: 'email', label: 'Email' },
+          {
+            key: 'roleId',
+            label: 'Rol',
+            render: (roleId) => getNombreRol(roleId)
+          },
+          {
+            key: 'sucursalId',
+            label: 'Sucursal',
+            render: (sucursalId) => getNombreSucursal(sucursalId)
+          },
+          { key: 'cuil', label: 'CUIL' },
+          { key: 'fechaCreacion', label: 'Alta' },
+          {
+            key: 'fechaBaja',
+            label: 'Fecha Baja',
+            render: (fechaBaja) => fechaBaja
+              ? <span className="text-red-600 text-xs font-medium">{fechaBaja}</span>
+              : <span className="text-gray-400 text-xs">—</span>
+          }
+        ]}
+        data={usuarios}
+        onEdit={handleEditUsuario}
+        onDelete={handleDeleteUsuario}
+        onAdd={handleAddUsuario}
+        skipInternalConfirm
+      />
 
       <FormModal
         isOpen={isUsuarioModalOpen}
@@ -434,52 +302,6 @@ const AdminUsuarios: React.FC = () => {
         </div>
       </FormModal>
 
-      <FormModal
-        isOpen={isRoleModalOpen}
-        title={editingRoleId ? 'Editar Rol' : 'Nuevo Rol'}
-        onClose={() => setIsRoleModalOpen(false)}
-        onSubmit={handleSubmitRole}
-      >
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del rol</label>
-          <input
-            type="text"
-            value={roleFormData.nombre}
-            onChange={(e) => setRoleFormData({ ...roleFormData, nombre: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>
-          <textarea
-            value={roleFormData.descripcion}
-            onChange={(e) => setRoleFormData({ ...roleFormData, descripcion: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-            rows={2}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Permisos</label>
-          <div className="space-y-2 max-h-60 overflow-y-auto border border-gray-300 rounded p-4 bg-gray-50">
-            {permisosPosibles.map((permiso) => (
-              <label key={permiso} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded">
-                <input
-                  type="checkbox"
-                  checked={roleFormData.permisos.includes(permiso)}
-                  onChange={() => togglePermiso(permiso)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-gray-700">{permiso}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </FormModal>
-
       {/* Modal baja lógica */}
       {bajaModalId !== null && (() => {
         const u = usuarios.find((x) => x.id === bajaModalId);
@@ -532,7 +354,6 @@ const AdminUsuarios: React.FC = () => {
           </div>
         );
       })()}
-
     </div>
   );
 };

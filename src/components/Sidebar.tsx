@@ -30,9 +30,15 @@ const menuItems: MenuItem[] = [
     roles: ['admin']
   },
   {
-    label: 'Rubros y Servicios',
+    label: 'Rubros',
     path: '/admin/rubros-servicios',
     icon: '📋',
+    roles: ['admin']
+  },
+  {
+    label: 'Servicios',
+    path: '/admin/servicios',
+    icon: '🔧',
     roles: ['admin']
   },
   {
@@ -54,7 +60,7 @@ const menuItems: MenuItem[] = [
     roles: ['admin']
   },
   {
-    label: 'Roles y Permisos',
+    label: 'Roles',
     path: '/admin/roles',
     icon: '🔐',
     roles: ['admin']
